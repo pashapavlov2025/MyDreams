@@ -39,9 +39,12 @@ export default function SettingsContent() {
     setEditingDream(false);
   };
 
+  const existingGroups = Array.from(new Set(allAccounts.map((a) => a.bankGroup).filter(Boolean))) as string[];
+
   if (showAccountForm) {
     return (
       <AccountForm
+        existingGroups={existingGroups}
         onSave={async (data) => {
           await addAccount(data);
           setShowAccountForm(false);
@@ -160,12 +163,18 @@ export default function SettingsContent() {
                   key={acc.id}
                   className="flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0"
                 >
-                  <span className="text-xl mr-3">
-                    {acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'}
+                  <span className="text-xl mr-3 flex-shrink-0">
+                    {acc.icon?.startsWith('data:') ? (
+                      <img src={acc.icon} alt="" className="w-6 h-6 rounded-md object-cover" />
+                    ) : (
+                      acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'
+                    )}
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-gray-900 truncate">{acc.name}</div>
-                    <div className="text-xs text-gray-400">{acc.currency}</div>
+                    <div className="text-xs text-gray-400">
+                      {acc.bankGroup ? `${acc.bankGroup} · ` : ''}{acc.currency}
+                    </div>
                   </div>
                   {confirmDelete === acc.id ? (
                     <div className="flex gap-1">
@@ -224,8 +233,12 @@ export default function SettingsContent() {
                   key={acc.id}
                   className="flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0"
                 >
-                  <span className="text-xl mr-3">
-                    {acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'}
+                  <span className="text-xl mr-3 flex-shrink-0">
+                    {acc.icon?.startsWith('data:') ? (
+                      <img src={acc.icon} alt="" className="w-6 h-6 rounded-md object-cover" />
+                    ) : (
+                      acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'
+                    )}
                   </span>
                   <div className="flex-1">
                     <div className="font-medium text-gray-500">{acc.name}</div>

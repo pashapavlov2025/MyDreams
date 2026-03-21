@@ -3,12 +3,23 @@
 import { useMemo } from 'react';
 import DreamProgress from '@/components/DreamProgress';
 import AccountRow from '@/components/AccountRow';
-import { useAccountsWithBalances } from '@/hooks/useAccounts';
+import { useAccountsWithBalances, type AccountWithBalance } from '@/hooks/useAccounts';
 import { useDream } from '@/hooks/useDream';
 import { useSettings } from '@/hooks/useCurrency';
 import { convertToBase } from '@/lib/currency';
 import { formatMoney } from '@/lib/format';
 import { ACCOUNT_TYPE_LABELS, type AccountType } from '@/db/models';
+
+interface BankSubGroup {
+  bankGroup: string;
+  icon: string;
+  accounts: AccountWithBalance[];
+}
+
+interface TypeGroup {
+  type: AccountType;
+  subGroups: BankSubGroup[];
+}
 
 export default function DashboardContent() {
   const accounts = useAccountsWithBalances();
@@ -23,14 +34,31 @@ export default function DashboardContent() {
     }, 0);
   }, [accounts, baseCurrency]);
 
-  const groups = useMemo(() => {
-    const map = new Map<AccountType, typeof accounts>();
+  const groups = useMemo((): TypeGroup[] => {
+    const typeMap = new Map<AccountType, AccountWithBalance[]>();
     for (const acc of accounts) {
-      const arr = map.get(acc.type) || [];
+      const arr = typeMap.get(acc.type) || [];
       arr.push(acc);
-      map.set(acc.type, arr);
+      typeMap.set(acc.type, arr);
     }
-    return Array.from(map.entries());
+
+    return Array.from(typeMap.entries()).map(([type, accs]) => {
+      const bankMap = new Map<string, AccountWithBalance[]>();
+      for (const acc of accs) {
+        const key = acc.bankGroup || '';
+        const arr = bankMap.get(key) || [];
+        arr.push(acc);
+        bankMap.set(key, arr);
+      }
+
+      const subGroups: BankSubGroup[] = Array.from(bankMap.entries()).map(([bankGroup, bankAccs]) => ({
+        bankGroup,
+        icon: bankAccs[0].icon,
+        accounts: bankAccs,
+      }));
+
+      return { type, subGroups };
+    });
   }, [accounts]);
 
   return (
@@ -55,14 +83,35 @@ export default function DashboardContent() {
       </div>
 
       {groups.length > 0 ? (
-        groups.map(([type, accs]) => (
+        groups.map(({ type, subGroups }) => (
           <div key={type} className="mb-4">
             <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
               {ACCOUNT_TYPE_LABELS[type]}
             </div>
             <div className="bg-white rounded-xl mx-4 overflow-hidden shadow-sm">
-              {accs.map((acc) => (
-                <AccountRow key={acc.id} account={acc} baseCurrency={baseCurrency} />
+              {subGroups.map(({ bankGroup, icon, accounts: bankAccs }) => (
+                <div key={bankGroup}>
+                  {bankGroup && (
+                    <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+                      <span className="flex-shrink-0">
+                        {icon?.startsWith('data:') ? (
+                          <img src={icon} alt="" className="w-5 h-5 rounded object-cover" />
+                        ) : (
+                          <span className="text-sm">{icon}</span>
+                        )}
+                      </span>
+                      <span className="text-xs font-semibold text-gray-500">{bankGroup}</span>
+                    </div>
+                  )}
+                  {bankAccs.map((acc) => (
+                    <AccountRow
+                      key={acc.id}
+                      account={acc}
+                      baseCurrency={baseCurrency}
+                      indented={!!bankGroup}
+                    />
+                  ))}
+                </div>
               ))}
             </div>
           </div>

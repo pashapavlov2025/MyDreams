@@ -6,6 +6,7 @@ export interface Account {
   type: AccountType;
   currency: string;
   icon: string;
+  bankGroup?: string;
   sortOrder: number;
   isArchived: boolean;
   createdAt: Date;
