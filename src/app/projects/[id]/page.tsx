@@ -1,13 +1,9 @@
-'use client';
+import ProjectDetailClient from './client';
 
-import { useParams } from 'next/navigation';
-import ProjectDetailContent from '@/components/ProjectDetailContent';
+export async function generateStaticParams() {
+  return [{ id: '0' }];
+}
 
 export default function ProjectPage() {
-  const params = useParams();
-  const id = Number(params.id);
-
-  if (!id) return null;
-
-  return <ProjectDetailContent projectId={id} />;
+  return <ProjectDetailClient />;
 }

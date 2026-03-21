@@ -1,12 +1,9 @@
-'use client';
+import AccountHistoryClient from './client';
 
-import dynamic from 'next/dynamic';
+export async function generateStaticParams() {
+  return [{ id: '0' }];
+}
 
-const AccountHistoryContent = dynamic(
-  () => import('@/components/AccountHistoryContent'),
-  { ssr: false }
-);
-
-export default function AccountHistoryPage({ params }: { params: { id: string } }) {
-  return <AccountHistoryContent accountId={Number(params.id)} />;
+export default function AccountHistoryPage() {
+  return <AccountHistoryClient />;
 }
