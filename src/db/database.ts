@@ -159,8 +159,8 @@ export async function seedDemoProfile(): Promise<number> {
   const now = new Date();
   const snapshots: { accountId: number; date: Date; amount: number }[] = [];
 
-  const baseAmounts = [12500, 45000, 8200, 67000, 0.85, 3000, 285000];
-  const growthRates = [0.02, 0.03, 0.01, 0.05, 0.08, -0.01, -0.005];
+  const baseAmounts = [15000, 85000, 12000, 180000, 1.5, 5000, 120000];
+  const growthRates = [0.02, 0.03, 0.01, 0.05, 0.08, -0.01, -0.003];
 
   for (let month = 2; month >= 0; month--) {
     const date = new Date(now.getFullYear(), now.getMonth() - month, 15);
@@ -177,7 +177,7 @@ export async function seedDemoProfile(): Promise<number> {
   await db.snapshots.bulkAdd(snapshots);
 
   // Demo dream
-  await db.dreams.add({ profileId, targetAmount: 500000, currency: 'USD' });
+  await db.dreams.add({ profileId, targetAmount: 1000000, currency: 'USD' });
 
   return profileId;
 }

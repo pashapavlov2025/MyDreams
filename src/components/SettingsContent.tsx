@@ -267,7 +267,7 @@ export default function SettingsContent() {
                 {!profiles.some((p) => p.isDemo) && (
                   <button
                     onClick={createDemoProfile}
-                    className="flex-1 py-2.5 text-gray-500 font-medium text-sm"
+                    className="flex-1 py-2.5 bg-purple-50 text-purple-600 font-medium text-sm rounded-xl border border-purple-200"
                   >
                     🎭 {t('profile.demo')}
                   </button>
