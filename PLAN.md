@@ -85,22 +85,22 @@
   - aria-labels на интерактивных элементах
   - Достаточный контраст текста
 
-### ФАЗА 3: Инвестиционные проекты (Вилла на Бали и подобные)
+### ФАЗА 3: Инвестиционные проекты (Вилла на Бали и подобные) ✅ ГОТОВО
 **Цель**: Полный P&L по проектам типа "строящаяся вилла".
 
-- [ ] **3.1** Модель `InvestmentProject`:
-  - Название, описание, статус (строится/готово/продаётся)
+- [x] **3.1** Модель `InvestmentProject`:
+  - Название, описание, статус (строится/в работе)
   - Валюта проекта
   - Текущая рыночная оценка
-- [ ] **3.2** Модель `ProjectTransaction`:
+- [x] **3.2** Модель `ProjectTransaction`:
   - Тип: вложение, расход, доход от аренды, продажа
   - Сумма, дата, описание, категория
-- [ ] **3.3** Экран проекта:
+- [x] **3.3** Экран проекта:
   - Суммарно вложено / Текущая оценка / P&L
   - Timeline транзакций
-  - Ожидаемый доход от аренды (если применимо)
-- [ ] **3.4** ROI калькулятор
-- [ ] **3.5** Проекты учитываются в общем Net Worth
+  - Добавление/удаление транзакций
+- [x] **3.4** ROI калькулятор (на экране проекта)
+- [x] **3.5** Проекты учитываются в общем Net Worth
 
 ### ФАЗА 4: Бэкенд и синхронизация
 **Цель**: Данные не теряются, доступны с любого устройства.
@@ -133,7 +133,8 @@ src/
 │   ├── page.tsx                # Dashboard (home)
 │   ├── account/[id]/page.tsx   # Account history
 │   ├── update/page.tsx         # Bulk balance update
-│   ├── projects/page.tsx       # Investment projects
+│   ├── projects/page.tsx       # Investment projects list
+│   ├── projects/[id]/page.tsx  # Project detail with P&L
 │   └── settings/page.tsx       # Settings
 ├── components/
 │   ├── AppProvider.tsx          # Currency rates loader + PinLock wrapper
@@ -148,12 +149,17 @@ src/
 │   ├── UpdateContent.tsx        # Bulk update page
 │   ├── SettingsContent.tsx      # Settings page (dream, currency, accounts, PIN)
 │   ├── TabBar.tsx               # Bottom navigation
+│   ├── ProjectsContent.tsx      # Projects list with summary
+│   ├── ProjectDetailContent.tsx # Project P&L + transactions
+│   ├── ProjectForm.tsx          # Add/edit project form
+│   ├── TransactionForm.tsx      # Add project transaction form
 │   └── ErrorBoundary.tsx        # Error handling
 ├── hooks/
 │   ├── useAccounts.ts           # CRUD + accounts with balances
 │   ├── useCurrency.ts           # Settings + live rates hook
 │   ├── useDream.ts              # Dream goal CRUD
-│   └── useSnapshots.ts          # Bulk snapshot update
+│   ├── useSnapshots.ts          # Bulk snapshot update
+│   └── useProjects.ts           # Projects + transactions CRUD + P&L
 ├── db/
 │   ├── database.ts              # Dexie.js DB schema + queries
 │   └── models.ts                # TypeScript interfaces

@@ -7,6 +7,7 @@ import AccountRow from '@/components/AccountRow';
 import NetWorthChart from '@/components/NetWorthChart';
 import AssetBreakdown from '@/components/AssetBreakdown';
 import { useAccountsWithBalances, type AccountWithBalance } from '@/hooks/useAccounts';
+import { useProjectsWithPnL } from '@/hooks/useProjects';
 import { useDream } from '@/hooks/useDream';
 import { useSettings } from '@/hooks/useCurrency';
 import { convertToBase } from '@/lib/currency';
@@ -29,6 +30,7 @@ interface TypeGroup {
 
 export default function DashboardContent() {
   const accounts = useAccountsWithBalances();
+  const projectsWithPnL = useProjectsWithPnL();
   const { dream } = useDream();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? 'USD';
@@ -48,12 +50,19 @@ export default function DashboardContent() {
     []
   );
 
+  const projectsValue = useMemo(() => {
+    return projectsWithPnL.reduce((sum, p) => {
+      return sum + convertToBase(p.currentMarketValue, p.currency, baseCurrency);
+    }, 0);
+  }, [projectsWithPnL, baseCurrency]);
+
   const netWorth = useMemo(() => {
-    return accounts.reduce((sum, acc) => {
+    const accountsTotal = accounts.reduce((sum, acc) => {
       const val = convertToBase(acc.latestBalance, acc.currency, baseCurrency);
       return acc.type === 'debt' ? sum - Math.abs(val) : sum + val;
     }, 0);
-  }, [accounts, baseCurrency]);
+    return accountsTotal + projectsValue;
+  }, [accounts, baseCurrency, projectsValue]);
 
   const delta = useMemo(() => {
     if (allSnapshots.length === 0 || allAccounts.length === 0) return null;
