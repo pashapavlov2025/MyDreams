@@ -12,7 +12,7 @@ export interface AccountWithBalance extends Account {
 
 export function useAccounts() {
   const accounts = useLiveQuery(
-    () => db.accounts.where('isArchived').equals(0).sortBy('sortOrder'),
+    () => db.accounts.filter((a) => !a.isArchived).sortBy('sortOrder'),
     [],
     []
   );
@@ -45,7 +45,7 @@ export function useAccounts() {
 
 export function useAccountsWithBalances() {
   const data = useLiveQuery(async () => {
-    const accounts = await db.accounts.where('isArchived').equals(0).sortBy('sortOrder');
+    const accounts = await db.accounts.filter((a) => !a.isArchived).sortBy('sortOrder');
     const result: AccountWithBalance[] = [];
 
     for (const account of accounts) {
