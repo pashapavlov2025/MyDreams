@@ -12,7 +12,7 @@ const ru = {
 
   // Tab bar
   'tabs.dashboard': 'Главная',
-  'tabs.update': 'Обновить',
+  'tabs.accounts': 'Аккаунты',
   'tabs.projects': 'Проекты',
   'tabs.settings': 'Настройки',
 
@@ -21,7 +21,7 @@ const ru = {
   'dashboard.netWorth': 'Капитал',
   'dashboard.sinceLastUpdate': 'с прошлого обновления',
   'dashboard.addFirstAccount': 'Добавьте первый аккаунт',
-  'dashboard.goToSettings': 'Перейдите в Настройки → Аккаунты',
+  'dashboard.goToSettings': 'Нажмите + на вкладке Аккаунты',
 
   // Dream
   'dream.pathToDream': 'Путь к мечте',
@@ -57,13 +57,14 @@ const ru = {
   // Account history
   'accountHistory.balance': 'Баланс',
   'accountHistory.history': 'История',
-  'accountHistory.noRecords': 'Нет записей. Обновите балансы на вкладке "Обновить"',
+  'accountHistory.noRecords': 'Нет записей. Обновите балансы на вкладке "Аккаунты"',
 
   // Update balances
-  'update.title': 'Обновить балансы',
-  'update.noAccounts': 'Нет аккаунтов для обновления',
-  'update.addInSettings': 'Добавьте аккаунты в Настройках',
+  'update.title': 'Аккаунты',
+  'update.noAccounts': 'Нет аккаунтов',
+  'update.addFirst': 'Нажмите + чтобы добавить первый',
   'update.was': 'Было',
+  'update.updateBalances': 'Обновить балансы',
 
   // Settings
   'settings.title': 'Настройки',

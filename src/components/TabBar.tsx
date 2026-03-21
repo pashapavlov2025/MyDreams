@@ -5,7 +5,7 @@ import { useTranslation, type TranslationKey } from '@/i18n';
 
 const tabs: { path: string; labelKey: TranslationKey; icon: string }[] = [
   { path: '/', labelKey: 'tabs.dashboard', icon: '◉' },
-  { path: '/update', labelKey: 'tabs.update', icon: '✎' },
+  { path: '/update', labelKey: 'tabs.accounts', icon: '💳' },
   { path: '/projects', labelKey: 'tabs.projects', icon: '◫' },
   { path: '/settings', labelKey: 'tabs.settings', icon: '⚙' },
 ];

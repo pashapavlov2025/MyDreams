@@ -14,7 +14,7 @@ const en: Record<TranslationKey, string> = {
 
   // Tab bar
   'tabs.dashboard': 'Dashboard',
-  'tabs.update': 'Update',
+  'tabs.accounts': 'Accounts',
   'tabs.projects': 'Projects',
   'tabs.settings': 'Settings',
 
@@ -23,7 +23,7 @@ const en: Record<TranslationKey, string> = {
   'dashboard.netWorth': 'Net Worth',
   'dashboard.sinceLastUpdate': 'since last update',
   'dashboard.addFirstAccount': 'Add your first account',
-  'dashboard.goToSettings': 'Go to Settings → Accounts',
+  'dashboard.goToSettings': 'Tap + on the Accounts tab',
 
   // Dream
   'dream.pathToDream': 'Path to dream',
@@ -59,13 +59,14 @@ const en: Record<TranslationKey, string> = {
   // Account history
   'accountHistory.balance': 'Balance',
   'accountHistory.history': 'History',
-  'accountHistory.noRecords': 'No records. Update balances on the "Update" tab',
+  'accountHistory.noRecords': 'No records. Update balances on the "Accounts" tab',
 
   // Update balances
-  'update.title': 'Update balances',
-  'update.noAccounts': 'No accounts to update',
-  'update.addInSettings': 'Add accounts in Settings',
+  'update.title': 'Accounts',
+  'update.noAccounts': 'No accounts',
+  'update.addFirst': 'Tap + to add your first',
   'update.was': 'Was',
+  'update.updateBalances': 'Update balances',
 
   // Settings
   'settings.title': 'Settings',

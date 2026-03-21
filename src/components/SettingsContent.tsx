@@ -3,11 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useDream } from '@/hooks/useDream';
 import { useSettings, useCurrencyRates } from '@/hooks/useCurrency';
-import { useAccounts, useAllAccounts } from '@/hooks/useAccounts';
-import AccountForm from '@/components/AccountForm';
 import { formatMoney, formatDate } from '@/lib/format';
 import { getAvailableCurrencies } from '@/lib/currency';
-import { ACCOUNT_TYPE_ICONS, type AccountType, type Account } from '@/db/models';
 import { setAppPin, removeAppPin, hasPin } from '@/components/PinLock';
 import { useTranslation, getDateLocale, type Locale } from '@/i18n';
 import { useProfile } from '@/hooks/useProfile';
@@ -15,12 +12,10 @@ import { useProfile } from '@/hooks/useProfile';
 export default function SettingsContent() {
   const { dream, updateDream } = useDream();
   const { settings, updateBaseCurrency } = useSettings();
-  const { addAccount, updateAccount, archiveAccount, deleteAccount } = useAccounts();
-  const allAccounts = useAllAccounts();
   const currencies = getAvailableCurrencies();
   const { t, locale, setLocale } = useTranslation();
   const dateLocale = getDateLocale(locale);
-  const { profileId, profile, profiles, switchProfile, createProfile, deleteProfile, createDemoProfile } = useProfile();
+  const { profileId, profiles, switchProfile, createProfile, deleteProfile, createDemoProfile } = useProfile();
 
   const { loading: ratesLoading, lastUpdate: ratesLastUpdate, refreshRates } = useCurrencyRates();
 
@@ -28,12 +23,9 @@ export default function SettingsContent() {
   const [newProfileName, setNewProfileName] = useState('');
   const [confirmDeleteProfile, setConfirmDeleteProfile] = useState<number | null>(null);
 
-  const [showAccountForm, setShowAccountForm] = useState(false);
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingDream, setEditingDream] = useState(false);
   const [dreamInput, setDreamInput] = useState('');
   const [dreamCurrency, setDreamCurrency] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [pinEnabled, setPinEnabled] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
   const [newPin, setNewPin] = useState('');
@@ -44,9 +36,6 @@ export default function SettingsContent() {
   useEffect(() => {
     setPinEnabled(hasPin());
   }, []);
-
-  const activeAccounts = allAccounts.filter((a) => !a.isArchived);
-  const archivedAccounts = allAccounts.filter((a) => a.isArchived);
 
   const startEditDream = () => {
     setDreamInput(dream?.targetAmount?.toString() ?? '');
@@ -61,36 +50,6 @@ export default function SettingsContent() {
     }
     setEditingDream(false);
   };
-
-  const existingGroups = Array.from(new Set(allAccounts.map((a) => a.bankGroup).filter(Boolean))) as string[];
-
-  if (showAccountForm || editingAccount) {
-    return (
-      <AccountForm
-        initialData={editingAccount ? {
-          name: editingAccount.name,
-          type: editingAccount.type,
-          currency: editingAccount.currency,
-          icon: editingAccount.icon,
-          bankGroup: editingAccount.bankGroup,
-        } : undefined}
-        existingGroups={existingGroups}
-        onSave={async (data) => {
-          if (editingAccount?.id) {
-            await updateAccount(editingAccount.id, data);
-            setEditingAccount(null);
-          } else {
-            await addAccount(data);
-            setShowAccountForm(false);
-          }
-        }}
-        onCancel={() => {
-          setShowAccountForm(false);
-          setEditingAccount(null);
-        }}
-      />
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -317,119 +276,6 @@ export default function SettingsContent() {
             )}
           </div>
         </section>
-
-        {/* Accounts */}
-        <section>
-          <div className="flex items-center justify-between mb-2 px-1">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              {t('settings.accounts')} ({activeAccounts.length})
-            </div>
-            <button
-              onClick={() => setShowAccountForm(true)}
-              className="text-indigo-600 text-sm font-semibold"
-            >
-              {t('settings.addAccount')}
-            </button>
-          </div>
-
-          {activeAccounts.length > 0 ? (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {activeAccounts.map((acc) => (
-                <div
-                  key={acc.id}
-                  className="flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0"
-                >
-                  <button
-                    onClick={() => setEditingAccount(acc)}
-                    className="flex items-center flex-1 min-w-0 text-left"
-                  >
-                    <span className="text-xl mr-3 flex-shrink-0">
-                      {acc.icon?.startsWith('data:') ? (
-                        <img src={acc.icon} alt="" className="w-6 h-6 rounded-md object-cover" />
-                      ) : (
-                        acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'
-                      )}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-gray-900 truncate">{acc.name}</div>
-                      <div className="text-xs text-gray-400">
-                        {acc.bankGroup ? `${acc.bankGroup} · ` : ''}{acc.currency}
-                      </div>
-                    </div>
-                    <span className="text-gray-300 ml-2">›</span>
-                  </button>
-                  {confirmDelete === acc.id ? (
-                    <div className="flex gap-1 ml-2">
-                      <button
-                        onClick={() => {
-                          if (acc.id) deleteAccount(acc.id);
-                          setConfirmDelete(null);
-                        }}
-                        className="px-3 py-1 bg-red-500 text-white text-xs rounded-lg font-medium"
-                      >
-                        {t('common.delete')}
-                      </button>
-                      <button
-                        onClick={() => setConfirmDelete(null)}
-                        className="px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-lg font-medium"
-                      >
-                        {t('common.no')}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-1 ml-2">
-                      <button
-                        onClick={() => acc.id && archiveAccount(acc.id)}
-                        className="px-2 py-1 text-xs text-gray-400"
-                        aria-label={t('settings.archive')}
-                      >
-                        📥
-                      </button>
-                      <button
-                        onClick={() => setConfirmDelete(acc.id ?? null)}
-                        className="px-2 py-1 text-xs text-gray-400"
-                        aria-label={t('common.delete')}
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-              <p className="text-gray-400 text-sm">{t('settings.noAccounts')}</p>
-            </div>
-          )}
-        </section>
-
-        {archivedAccounts.length > 0 && (
-          <section>
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-              {t('settings.archive')} ({archivedAccounts.length})
-            </div>
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden opacity-60">
-              {archivedAccounts.map((acc) => (
-                <div
-                  key={acc.id}
-                  className="flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0"
-                >
-                  <span className="text-xl mr-3 flex-shrink-0">
-                    {acc.icon?.startsWith('data:') ? (
-                      <img src={acc.icon} alt="" className="w-6 h-6 rounded-md object-cover" />
-                    ) : (
-                      acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'
-                    )}
-                  </span>
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-500">{acc.name}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* Currency Rates */}
         <section>
