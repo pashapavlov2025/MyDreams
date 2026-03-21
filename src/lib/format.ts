@@ -34,16 +34,16 @@ export function formatMoneyShort(amount: number, currency: string): string {
   return `${sign}${symbol}${formatted}`;
 }
 
-export function formatDate(date: Date): string {
-  return new Date(date).toLocaleDateString('ru-RU', {
+export function formatDate(date: Date, locale: string = 'ru-RU'): string {
+  return new Date(date).toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
 }
 
-export function formatDateShort(date: Date): string {
-  return new Date(date).toLocaleDateString('ru-RU', {
+export function formatDateShort(date: Date, locale: string = 'ru-RU'): string {
+  return new Date(date).toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
   });

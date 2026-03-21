@@ -1,7 +1,16 @@
 export type AccountType = 'bank' | 'cash' | 'broker' | 'crypto' | 'realestate' | 'debt' | 'other';
 
+export interface Profile {
+  id?: number;
+  name: string;
+  icon: string;
+  isDemo: boolean;
+  createdAt: Date;
+}
+
 export interface Account {
   id?: number;
+  profileId: number;
   name: string;
   type: AccountType;
   currency: string;
@@ -31,6 +40,7 @@ export type ProjectStage = 'building' | 'operating';
 
 export interface InvestmentProject {
   id?: number;
+  profileId: number;
   name: string;
   description: string;
   stage: ProjectStage;
@@ -53,24 +63,27 @@ export interface ProjectTransaction {
 
 export interface Dream {
   id?: number;
+  profileId: number;
   targetAmount: number;
   currency: string;
 }
 
 export interface Settings {
   id?: number;
+  profileId: number;
   baseCurrency: string;
   lastRatesUpdate: Date | null;
 }
 
-export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
-  bank: 'Банки',
-  cash: 'Наличные',
-  broker: 'Брокер',
-  crypto: 'Крипто',
-  realestate: 'Недвижимость',
-  debt: 'Долги',
-  other: 'Другое',
+// Translation keys for account types — use with t() from useTranslation
+export const ACCOUNT_TYPE_KEYS: Record<AccountType, string> = {
+  bank: 'accountType.bank',
+  cash: 'accountType.cash',
+  broker: 'accountType.broker',
+  crypto: 'accountType.crypto',
+  realestate: 'accountType.realestate',
+  debt: 'accountType.debt',
+  other: 'accountType.other',
 };
 
 export const ACCOUNT_TYPE_ICONS: Record<AccountType, string> = {

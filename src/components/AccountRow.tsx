@@ -5,6 +5,7 @@ import type { AccountWithBalance } from '@/hooks/useAccounts';
 import { formatMoney, formatDateShort } from '@/lib/format';
 import { convertToBase } from '@/lib/currency';
 import { ACCOUNT_TYPE_ICONS } from '@/db/models';
+import { useTranslation, getDateLocale } from '@/i18n';
 
 interface AccountRowProps {
   account: AccountWithBalance;
@@ -14,6 +15,7 @@ interface AccountRowProps {
 
 export default function AccountRow({ account, baseCurrency, indented }: AccountRowProps) {
   const router = useRouter();
+  const { t, locale } = useTranslation();
   const icon = account.icon || ACCOUNT_TYPE_ICONS[account.type] || '📦';
   const baseAmount = convertToBase(account.latestBalance, account.currency, baseCurrency);
   const showConverted = account.currency !== baseCurrency;
@@ -38,7 +40,7 @@ export default function AccountRow({ account, baseCurrency, indented }: AccountR
       <div className="flex-1 min-w-0">
         <div className="font-medium text-gray-900 truncate">{account.name}</div>
         <div className="text-xs text-gray-400">
-          {account.latestDate ? formatDateShort(account.latestDate) : 'Нет данных'}
+          {account.latestDate ? formatDateShort(account.latestDate, getDateLocale(locale)) : t('accountRow.noData')}
         </div>
       </div>
       <div className="text-right ml-2">

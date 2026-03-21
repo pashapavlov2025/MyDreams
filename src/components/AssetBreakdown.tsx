@@ -3,8 +3,8 @@
 import { useMemo } from 'react';
 import type { AccountWithBalance } from '@/hooks/useAccounts';
 import { convertToBase } from '@/lib/currency';
-import { formatMoney } from '@/lib/format';
-import { ACCOUNT_TYPE_LABELS, type AccountType } from '@/db/models';
+import { ACCOUNT_TYPE_KEYS, type AccountType } from '@/db/models';
+import { useTranslation, type TranslationKey } from '@/i18n';
 import { ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 interface Props {
@@ -23,6 +23,8 @@ const COLORS: Record<AccountType, string> = {
 };
 
 export default function AssetBreakdown({ accounts, baseCurrency }: Props) {
+  const { t } = useTranslation();
+
   const data = useMemo(() => {
     const typeMap = new Map<AccountType, number>();
     for (const acc of accounts) {
@@ -32,15 +34,15 @@ export default function AssetBreakdown({ accounts, baseCurrency }: Props) {
     }
 
     return Array.from(typeMap.entries())
-      .filter(([, value]) => value > 0) // Only positive for pie
+      .filter(([, value]) => value > 0)
       .map(([type, value]) => ({
-        name: ACCOUNT_TYPE_LABELS[type],
+        name: t(ACCOUNT_TYPE_KEYS[type] as TranslationKey),
         value: Math.round(value),
         type,
         color: COLORS[type],
       }))
       .sort((a, b) => b.value - a.value);
-  }, [accounts, baseCurrency]);
+  }, [accounts, baseCurrency, t]);
 
   const total = data.reduce((s, d) => s + d.value, 0);
 
@@ -49,7 +51,7 @@ export default function AssetBreakdown({ accounts, baseCurrency }: Props) {
   return (
     <div className="px-4 mb-4">
       <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-        Структура активов
+        {t('charts.assetBreakdown')}
       </div>
       <div className="bg-white rounded-xl shadow-sm p-4">
         <div className="flex items-center gap-4">

@@ -5,22 +5,23 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { getSettings, ensureSettings, db } from '@/db/database';
 import { useCallback } from 'react';
 import { loadCachedRates, updateAndCacheRates } from '@/lib/currency';
+import { useProfile } from './useProfile';
 
 export function useSettings() {
-  // Ensure default settings exist (write operation, outside liveQuery)
-  useEffect(() => {
-    ensureSettings();
-  }, []);
+  const { profileId } = useProfile();
 
-  // Read-only liveQuery
-  const settings = useLiveQuery(() => getSettings(), []);
+  useEffect(() => {
+    ensureSettings(profileId);
+  }, [profileId]);
+
+  const settings = useLiveQuery(() => getSettings(profileId), [profileId]);
 
   const updateBaseCurrency = useCallback(async (currency: string) => {
-    const s = await getSettings();
+    const s = await getSettings(profileId);
     if (s?.id) {
       await db.settings.update(s.id, { baseCurrency: currency });
     }
-  }, []);
+  }, [profileId]);
 
   return { settings, updateBaseCurrency };
 }
@@ -30,9 +31,7 @@ export function useCurrencyRates() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
   useEffect(() => {
-    // Load cached rates on mount
     loadCachedRates().then(() => {
-      // Check if rates are stale (> 4 hours old)
       db.settings.toCollection().first().then((s) => {
         const lastRatesUpdate = s?.lastRatesUpdate;
         if (lastRatesUpdate) setLastUpdate(new Date(lastRatesUpdate));

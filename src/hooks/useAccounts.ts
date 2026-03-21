@@ -2,8 +2,9 @@
 
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getLatestSnapshot } from '@/db/database';
-import type { Account, BalanceSnapshot } from '@/db/models';
+import type { Account } from '@/db/models';
 import { useCallback } from 'react';
+import { useProfile } from './useProfile';
 
 export interface AccountWithBalance extends Account {
   latestBalance: number;
@@ -11,21 +12,27 @@ export interface AccountWithBalance extends Account {
 }
 
 export function useAccounts() {
+  const { profileId } = useProfile();
+
   const accounts = useLiveQuery(
-    () => db.accounts.filter((a) => !a.isArchived).sortBy('sortOrder'),
-    [],
+    () => db.accounts
+      .where('profileId').equals(profileId)
+      .filter((a) => !a.isArchived)
+      .sortBy('sortOrder'),
+    [profileId],
     []
   );
 
-  const addAccount = useCallback(async (account: Omit<Account, 'id' | 'createdAt' | 'sortOrder' | 'isArchived'>) => {
-    const count = await db.accounts.count();
+  const addAccount = useCallback(async (account: Omit<Account, 'id' | 'profileId' | 'createdAt' | 'sortOrder' | 'isArchived'>) => {
+    const count = await db.accounts.where('profileId').equals(profileId).count();
     return db.accounts.add({
       ...account,
+      profileId,
       sortOrder: count,
       isArchived: false,
       createdAt: new Date(),
     });
-  }, []);
+  }, [profileId]);
 
   const updateAccount = useCallback(async (id: number, data: Partial<Account>) => {
     return db.accounts.update(id, data);
@@ -44,8 +51,13 @@ export function useAccounts() {
 }
 
 export function useAccountsWithBalances() {
+  const { profileId } = useProfile();
+
   const data = useLiveQuery(async () => {
-    const accounts = await db.accounts.filter((a) => !a.isArchived).sortBy('sortOrder');
+    const accounts = await db.accounts
+      .where('profileId').equals(profileId)
+      .filter((a) => !a.isArchived)
+      .sortBy('sortOrder');
     const result: AccountWithBalance[] = [];
 
     for (const account of accounts) {
@@ -57,12 +69,18 @@ export function useAccountsWithBalances() {
       });
     }
     return result;
-  }, [], []);
+  }, [profileId], []);
 
   return data ?? [];
 }
 
 export function useAllAccounts() {
-  const accounts = useLiveQuery(() => db.accounts.toArray(), [], []);
+  const { profileId } = useProfile();
+
+  const accounts = useLiveQuery(
+    () => db.accounts.where('profileId').equals(profileId).toArray(),
+    [profileId],
+    []
+  );
   return accounts ?? [];
 }

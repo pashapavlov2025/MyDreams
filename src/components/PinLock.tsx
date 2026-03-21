@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/i18n';
 
 const PIN_STORAGE_KEY = 'mydreams_pin_hash';
 const PIN_UNLOCKED_KEY = 'mydreams_unlocked';
@@ -29,6 +30,7 @@ export default function PinLock({ children }: Props) {
   const [state, setState] = useState<'loading' | 'locked' | 'unlocked' | 'no-pin'>('loading');
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
+  const { t } = useTranslation();
 
   useEffect(() => {
     const stored = getPinHash();
@@ -46,13 +48,12 @@ export default function PinLock({ children }: Props) {
     setPin((prev) => {
       const newPin = prev + digit;
       if (newPin.length === 4) {
-        // Verify
         hashPin(newPin).then((hash) => {
           if (hash === getPinHash()) {
             sessionStorage.setItem(PIN_UNLOCKED_KEY, 'true');
             setState('unlocked');
           } else {
-            setError('Неверный PIN');
+            setError('pin.wrong');
           }
           setPin('');
         });
@@ -78,14 +79,12 @@ export default function PinLock({ children }: Props) {
     return <>{children}</>;
   }
 
-  // Locked state - show PIN entry
   return (
     <div className="min-h-screen bg-white flex flex-col items-center justify-center px-8">
       <div className="text-5xl mb-6">🔒</div>
       <h2 className="text-xl font-bold text-gray-900 mb-2">MyDreams</h2>
-      <p className="text-sm text-gray-400 mb-8">Введите PIN-код</p>
+      <p className="text-sm text-gray-400 mb-8">{t('pin.enterPin')}</p>
 
-      {/* PIN dots */}
       <div className="flex gap-4 mb-8">
         {[0, 1, 2, 3].map((i) => (
           <div
@@ -98,10 +97,9 @@ export default function PinLock({ children }: Props) {
       </div>
 
       {error && (
-        <div className="text-red-500 text-sm font-medium mb-4 animate-pulse">{error}</div>
+        <div className="text-red-500 text-sm font-medium mb-4 animate-pulse">{t(error as 'pin.wrong')}</div>
       )}
 
-      {/* Number pad */}
       <div className="grid grid-cols-3 gap-4 w-full max-w-[280px]">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((key) => {
           if (key === '') return <div key="empty" />;
@@ -131,7 +129,6 @@ export default function PinLock({ children }: Props) {
   );
 }
 
-// Exported functions for settings page
 export async function setAppPin(pin: string): Promise<void> {
   const hash = await hashPin(pin);
   localStorage.setItem(PIN_STORAGE_KEY, hash);

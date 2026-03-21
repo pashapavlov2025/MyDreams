@@ -6,6 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getAccountSnapshots } from '@/db/database';
 import { formatMoney, formatDate } from '@/lib/format';
 import { ACCOUNT_TYPE_ICONS } from '@/db/models';
+import { useTranslation, getDateLocale } from '@/i18n';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -21,6 +22,8 @@ interface Props {
 
 export default function AccountHistoryContent({ accountId }: Props) {
   const router = useRouter();
+  const { t, locale } = useTranslation();
+  const dateLocale = getDateLocale(locale);
 
   const account = useLiveQuery(
     () => db.accounts.get(accountId),
@@ -35,15 +38,15 @@ export default function AccountHistoryContent({ accountId }: Props) {
 
   const chartData = useMemo(() => {
     return snapshots.map((s) => ({
-      date: new Date(s.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+      date: new Date(s.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' }),
       amount: s.amount,
     }));
-  }, [snapshots]);
+  }, [snapshots, dateLocale]);
 
   if (!account) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-400">Загрузка...</div>
+        <div className="text-gray-400">{t('common.loading')}</div>
       </div>
     );
   }
@@ -111,7 +114,7 @@ export default function AccountHistoryContent({ accountId }: Props) {
                   tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
                 />
                 <Tooltip
-                  formatter={(value) => [formatMoney(Number(value), account.currency), 'Баланс']}
+                  formatter={(value) => [formatMoney(Number(value), account.currency), t('accountHistory.balance')]}
                   labelStyle={{ color: '#6b7280' }}
                   contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
                 />
@@ -130,7 +133,7 @@ export default function AccountHistoryContent({ accountId }: Props) {
 
       <div className="px-4">
         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-          История ({snapshots.length})
+          {t('accountHistory.history')} ({snapshots.length})
         </div>
         {snapshots.length > 0 ? (
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -140,7 +143,7 @@ export default function AccountHistoryContent({ accountId }: Props) {
               return (
                 <div key={snap.id} className="flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0">
                   <div className="flex-1">
-                    <div className="text-sm text-gray-500">{formatDate(snap.date)}</div>
+                    <div className="text-sm text-gray-500">{formatDate(snap.date, dateLocale)}</div>
                   </div>
                   <div className="text-right">
                     <div className="font-semibold text-gray-900">
@@ -158,7 +161,7 @@ export default function AccountHistoryContent({ accountId }: Props) {
           </div>
         ) : (
           <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-            <p className="text-gray-400 text-sm">Нет записей. Обновите балансы на вкладке "Обновить"</p>
+            <p className="text-gray-400 text-sm">{t('accountHistory.noRecords')}</p>
           </div>
         )}
       </div>

@@ -6,11 +6,13 @@ import { useAccountsWithBalances } from '@/hooks/useAccounts';
 import { useSnapshots } from '@/hooks/useSnapshots';
 import { formatMoney } from '@/lib/format';
 import { ACCOUNT_TYPE_ICONS } from '@/db/models';
+import { useTranslation } from '@/i18n';
 
 export default function UpdateContent() {
   const accounts = useAccountsWithBalances();
   const { bulkUpdate } = useSnapshots();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [balances, setBalances] = useState<Record<number, string>>({});
   const [saving, setSaving] = useState(false);
@@ -46,14 +48,14 @@ export default function UpdateContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 pt-[max(env(safe-area-inset-top),12px)]">
-        <h1 className="text-lg font-bold text-center text-gray-900">Обновить балансы</h1>
+        <h1 className="text-lg font-bold text-center text-gray-900">{t('update.title')}</h1>
       </div>
 
       {accounts.length === 0 ? (
         <div className="text-center py-12 px-4">
           <div className="text-5xl mb-4">📭</div>
-          <p className="text-gray-500">Нет аккаунтов для обновления</p>
-          <p className="text-gray-400 text-sm mt-1">Добавьте аккаунты в Настройках</p>
+          <p className="text-gray-500">{t('update.noAccounts')}</p>
+          <p className="text-gray-400 text-sm mt-1">{t('update.addInSettings')}</p>
         </div>
       ) : (
         <>
@@ -85,7 +87,7 @@ export default function UpdateContent() {
                   </div>
                   {acc.latestBalance > 0 && (
                     <div className="text-xs text-gray-400 mt-1">
-                      Было: {formatMoney(acc.latestBalance, acc.currency)}
+                      {t('update.was')}: {formatMoney(acc.latestBalance, acc.currency)}
                     </div>
                   )}
                 </div>
@@ -99,7 +101,7 @@ export default function UpdateContent() {
               disabled={saving}
               className="w-full py-3.5 bg-indigo-600 text-white rounded-xl font-semibold text-lg disabled:opacity-50 active:bg-indigo-700 transition-colors"
             >
-              {saving ? 'Сохраняю...' : 'Сохранить'}
+              {saving ? t('common.saving') : t('common.save')}
             </button>
           </div>
         </>

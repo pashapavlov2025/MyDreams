@@ -11,8 +11,10 @@ import { useDream } from '@/hooks/useDream';
 import { useSettings } from '@/hooks/useCurrency';
 import { convertToBase } from '@/lib/currency';
 import { formatMoney } from '@/lib/format';
-import { ACCOUNT_TYPE_LABELS, type AccountType } from '@/db/models';
+import { ACCOUNT_TYPE_KEYS, type AccountType } from '@/db/models';
 import { db } from '@/db/database';
+import { useTranslation, type TranslationKey } from '@/i18n';
+import { useProfile } from '@/hooks/useProfile';
 
 interface BankSubGroup {
   bankGroup: string;
@@ -30,10 +32,24 @@ export default function DashboardContent() {
   const { dream } = useDream();
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? 'USD';
+  const { t } = useTranslation();
+  const { profileId, profile, profiles, switchProfile } = useProfile();
 
-  // Get all snapshots to compute delta
-  const allSnapshots = useLiveQuery(() => db.snapshots.toArray(), [], []);
-  const allAccounts = useLiveQuery(() => db.accounts.filter((a) => !a.isArchived).toArray(), [], []);
+  // Get account IDs for current profile to filter snapshots
+  const profileAccountIds = useMemo(() => accounts.map((a) => a.id!), [accounts]);
+
+  const allSnapshots = useLiveQuery(async () => {
+    const accs = await db.accounts.where('profileId').equals(profileId).toArray();
+    const ids = accs.map((a) => a.id!);
+    if (ids.length === 0) return [];
+    return db.snapshots.where('accountId').anyOf(ids).toArray();
+  }, [profileId], []);
+
+  const allAccounts = useLiveQuery(
+    () => db.accounts.where('profileId').equals(profileId).filter((a) => !a.isArchived).toArray(),
+    [profileId],
+    []
+  );
 
   const netWorth = useMemo(() => {
     return accounts.reduce((sum, acc) => {
@@ -42,13 +58,11 @@ export default function DashboardContent() {
     }, 0);
   }, [accounts, baseCurrency]);
 
-  // Compute delta: difference between latest and previous snapshot dates
   const delta = useMemo(() => {
     if (allSnapshots.length === 0 || allAccounts.length === 0) return null;
 
     const accountMap = new Map(allAccounts.filter((a) => a.id).map((a) => [a.id!, a]));
 
-    // Group by date (day precision)
     const dateMap = new Map<string, Map<number, number>>();
     for (const snap of allSnapshots) {
       const dateKey = new Date(snap.date).toISOString().slice(0, 10);
@@ -59,7 +73,6 @@ export default function DashboardContent() {
     const sortedDates = Array.from(dateMap.keys()).sort();
     if (sortedDates.length < 2) return null;
 
-    // Build net worth for the two latest dates
     const calcNetWorth = (upToDateIndex: number) => {
       const balances = new Map<number, number>();
       for (let i = 0; i <= upToDateIndex; i++) {
@@ -113,7 +126,22 @@ export default function DashboardContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 pt-[max(env(safe-area-inset-top),12px)]">
-        <h1 className="text-lg font-bold text-center text-gray-900">MyDreams</h1>
+        <div className="flex items-center justify-center gap-2">
+          <h1 className="text-lg font-bold text-gray-900">{t('dashboard.title')}</h1>
+          {profiles.length > 1 && (
+            <select
+              value={profileId}
+              onChange={(e) => switchProfile(Number(e.target.value))}
+              className="text-xs bg-gray-100 text-gray-600 rounded-lg px-2 py-1 font-medium border-0 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id!}>
+                  {p.icon} {p.name}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
       {dream && dream.targetAmount > 0 && (
@@ -125,13 +153,13 @@ export default function DashboardContent() {
       )}
 
       <div className="px-4 py-5 text-center">
-        <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Net Worth</div>
+        <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">{t('dashboard.netWorth')}</div>
         <div className="text-3xl font-bold text-gray-900">
           {formatMoney(netWorth, baseCurrency)}
         </div>
         {delta !== null && (
           <div className={`text-sm font-medium mt-1 ${delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
-            {delta >= 0 ? '+' : ''}{formatMoney(delta, baseCurrency)} с прошлого обновления
+            {delta >= 0 ? '+' : ''}{formatMoney(delta, baseCurrency)} {t('dashboard.sinceLastUpdate')}
           </div>
         )}
       </div>
@@ -143,7 +171,7 @@ export default function DashboardContent() {
         groups.map(({ type, subGroups }) => (
           <div key={type} className="mb-4">
             <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              {ACCOUNT_TYPE_LABELS[type]}
+              {t(ACCOUNT_TYPE_KEYS[type] as TranslationKey)}
             </div>
             <div className="bg-white rounded-xl mx-4 overflow-hidden shadow-sm">
               {subGroups.map(({ bankGroup, icon, accounts: bankAccs }) => (
@@ -176,9 +204,9 @@ export default function DashboardContent() {
       ) : (
         <div className="text-center py-12 px-4">
           <div className="text-5xl mb-4">✨</div>
-          <p className="text-gray-500 font-medium">Добавьте первый аккаунт</p>
+          <p className="text-gray-500 font-medium">{t('dashboard.addFirstAccount')}</p>
           <p className="text-gray-400 text-sm mt-1">
-            Перейдите в Настройки → Аккаунты
+            {t('dashboard.goToSettings')}
           </p>
         </div>
       )}

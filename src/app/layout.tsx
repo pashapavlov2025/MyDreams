@@ -8,7 +8,7 @@ const AppProvider = dynamic(() => import('@/components/AppProvider'), { ssr: fal
 
 export const metadata: Metadata = {
   title: 'MyDreams',
-  description: 'Путь к финансовой мечте',
+  description: 'Personal finance tracker',
   manifest: '/manifest.json',
 };
 
@@ -22,7 +22,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru">
+    <html lang="ru" suppressHydrationWarning>
       <body className="bg-gray-50 text-gray-900 antialiased">
         <ErrorBoundary>
           <AppProvider>

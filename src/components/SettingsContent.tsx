@@ -9,6 +9,8 @@ import { formatMoney, formatDate } from '@/lib/format';
 import { getAvailableCurrencies } from '@/lib/currency';
 import { ACCOUNT_TYPE_ICONS, type AccountType, type Account } from '@/db/models';
 import { setAppPin, removeAppPin, hasPin } from '@/components/PinLock';
+import { useTranslation, getDateLocale, type Locale } from '@/i18n';
+import { useProfile } from '@/hooks/useProfile';
 
 export default function SettingsContent() {
   const { dream, updateDream } = useDream();
@@ -16,8 +18,15 @@ export default function SettingsContent() {
   const { addAccount, updateAccount, archiveAccount, deleteAccount } = useAccounts();
   const allAccounts = useAllAccounts();
   const currencies = getAvailableCurrencies();
+  const { t, locale, setLocale } = useTranslation();
+  const dateLocale = getDateLocale(locale);
+  const { profileId, profile, profiles, switchProfile, createProfile, deleteProfile, createDemoProfile } = useProfile();
 
   const { loading: ratesLoading, lastUpdate: ratesLastUpdate, refreshRates } = useCurrencyRates();
+
+  const [showNewProfile, setShowNewProfile] = useState(false);
+  const [newProfileName, setNewProfileName] = useState('');
+  const [confirmDeleteProfile, setConfirmDeleteProfile] = useState<number | null>(null);
 
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
@@ -86,14 +95,14 @@ export default function SettingsContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 pt-[max(env(safe-area-inset-top),12px)]">
-        <h1 className="text-lg font-bold text-center text-gray-900">Настройки</h1>
+        <h1 className="text-lg font-bold text-center text-gray-900">{t('settings.title')}</h1>
       </div>
 
       <div className="p-4 space-y-6">
         {/* Dream Section */}
         <section>
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-            Мечта
+            {t('dream.title')}
           </div>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {editingDream ? (
@@ -121,13 +130,13 @@ export default function SettingsContent() {
                     onClick={() => setEditingDream(false)}
                     className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-medium"
                   >
-                    Отмена
+                    {t('common.cancel')}
                   </button>
                   <button
                     onClick={saveDream}
                     className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium"
                   >
-                    Сохранить
+                    {t('common.save')}
                   </button>
                 </div>
               </div>
@@ -141,10 +150,10 @@ export default function SettingsContent() {
                   <div className="font-medium text-gray-900">
                     {dream?.targetAmount
                       ? formatMoney(dream.targetAmount, dream.currency)
-                      : 'Установить цель'}
+                      : t('dream.setGoal')}
                   </div>
                   <div className="text-xs text-gray-400">
-                    {dream?.targetAmount ? 'Нажмите чтобы изменить' : 'Какова ваша мечта?'}
+                    {dream?.targetAmount ? t('dream.tapToChange') : t('dream.whatIsYourDream')}
                   </div>
                 </div>
                 <span className="text-gray-300">›</span>
@@ -156,7 +165,7 @@ export default function SettingsContent() {
         {/* Base Currency */}
         <section>
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-            Базовая валюта
+            {t('settings.baseCurrency')}
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4">
             <select
@@ -171,17 +180,155 @@ export default function SettingsContent() {
           </div>
         </section>
 
+        {/* Language */}
+        <section>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            {t('settings.language')}
+          </div>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="flex">
+              {(['ru', 'en'] as Locale[]).map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLocale(l)}
+                  className={`flex-1 py-3 text-center font-medium transition-colors ${
+                    locale === l
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {l === 'ru' ? '🇷🇺 Русский' : '🇬🇧 English'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Profiles */}
+        <section>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            {t('settings.profiles')}
+          </div>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {profiles.map((p) => (
+              <div
+                key={p.id}
+                className={`flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0 ${
+                  p.id === profileId ? 'bg-indigo-50' : ''
+                }`}
+              >
+                <button
+                  onClick={() => switchProfile(p.id!)}
+                  className="flex items-center flex-1 min-w-0 text-left"
+                >
+                  <span className="text-xl mr-3">{p.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium text-gray-900 truncate">
+                      {p.name}
+                      {p.isDemo && <span className="text-xs text-gray-400 ml-1">(demo)</span>}
+                    </div>
+                  </div>
+                  {p.id === profileId && (
+                    <span className="text-indigo-600 text-sm font-medium">✓</span>
+                  )}
+                </button>
+                {profiles.length > 1 && (
+                  confirmDeleteProfile === p.id ? (
+                    <div className="flex gap-1 ml-2">
+                      <button
+                        onClick={async () => {
+                          await deleteProfile(p.id!);
+                          setConfirmDeleteProfile(null);
+                        }}
+                        className="px-3 py-1 bg-red-500 text-white text-xs rounded-lg font-medium"
+                      >
+                        {t('common.delete')}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteProfile(null)}
+                        className="px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-lg font-medium"
+                      >
+                        {t('common.no')}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteProfile(p.id!)}
+                      className="px-2 py-1 text-xs text-gray-400 ml-2"
+                      aria-label={t('common.delete')}
+                    >
+                      🗑
+                    </button>
+                  )
+                )}
+              </div>
+            ))}
+
+            {showNewProfile ? (
+              <div className="p-4 space-y-3 border-t border-gray-100">
+                <input
+                  type="text"
+                  value={newProfileName}
+                  onChange={(e) => setNewProfileName(e.target.value)}
+                  placeholder={t('profile.name')}
+                  className="w-full px-4 py-3 bg-gray-100 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setShowNewProfile(false); setNewProfileName(''); }}
+                    className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-medium"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (newProfileName.trim()) {
+                        const id = await createProfile(newProfileName.trim(), '👤');
+                        switchProfile(id);
+                        setShowNewProfile(false);
+                        setNewProfileName('');
+                      }
+                    }}
+                    disabled={!newProfileName.trim()}
+                    className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-40"
+                  >
+                    {t('profile.create')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2 p-3 border-t border-gray-100">
+                <button
+                  onClick={() => setShowNewProfile(true)}
+                  className="flex-1 py-2.5 text-indigo-600 font-medium text-sm"
+                >
+                  + {t('profile.new')}
+                </button>
+                {!profiles.some((p) => p.isDemo) && (
+                  <button
+                    onClick={createDemoProfile}
+                    className="flex-1 py-2.5 text-gray-500 font-medium text-sm"
+                  >
+                    🎭 {t('profile.demo')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Accounts */}
         <section>
           <div className="flex items-center justify-between mb-2 px-1">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Аккаунты ({activeAccounts.length})
+              {t('settings.accounts')} ({activeAccounts.length})
             </div>
             <button
               onClick={() => setShowAccountForm(true)}
               className="text-indigo-600 text-sm font-semibold"
             >
-              + Добавить
+              {t('settings.addAccount')}
             </button>
           </div>
 
@@ -220,13 +367,13 @@ export default function SettingsContent() {
                         }}
                         className="px-3 py-1 bg-red-500 text-white text-xs rounded-lg font-medium"
                       >
-                        Удалить
+                        {t('common.delete')}
                       </button>
                       <button
                         onClick={() => setConfirmDelete(null)}
                         className="px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-lg font-medium"
                       >
-                        Нет
+                        {t('common.no')}
                       </button>
                     </div>
                   ) : (
@@ -234,14 +381,14 @@ export default function SettingsContent() {
                       <button
                         onClick={() => acc.id && archiveAccount(acc.id)}
                         className="px-2 py-1 text-xs text-gray-400"
-                        title="Архивировать"
+                        aria-label={t('settings.archive')}
                       >
                         📥
                       </button>
                       <button
                         onClick={() => setConfirmDelete(acc.id ?? null)}
                         className="px-2 py-1 text-xs text-gray-400"
-                        title="Удалить"
+                        aria-label={t('common.delete')}
                       >
                         🗑
                       </button>
@@ -252,7 +399,7 @@ export default function SettingsContent() {
             </div>
           ) : (
             <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-              <p className="text-gray-400 text-sm">Нет аккаунтов</p>
+              <p className="text-gray-400 text-sm">{t('settings.noAccounts')}</p>
             </div>
           )}
         </section>
@@ -260,7 +407,7 @@ export default function SettingsContent() {
         {archivedAccounts.length > 0 && (
           <section>
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-              Архив ({archivedAccounts.length})
+              {t('settings.archive')} ({archivedAccounts.length})
             </div>
             <div className="bg-white rounded-xl shadow-sm overflow-hidden opacity-60">
               {archivedAccounts.map((acc) => (
@@ -287,16 +434,16 @@ export default function SettingsContent() {
         {/* Currency Rates */}
         <section>
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-            Курсы валют
+            {t('settings.currencyRates')}
           </div>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             <div className="p-4 flex items-center justify-between">
               <div>
-                <div className="font-medium text-gray-900">Обновить курсы</div>
+                <div className="font-medium text-gray-900">{t('settings.updateRates')}</div>
                 <div className="text-xs text-gray-400">
                   {ratesLastUpdate
-                    ? `Обновлено: ${formatDate(ratesLastUpdate)}`
-                    : 'Не обновлялись'}
+                    ? `${t('settings.ratesUpdated')}: ${formatDate(ratesLastUpdate, dateLocale)}`
+                    : t('settings.ratesNever')}
                 </div>
               </div>
               <button
@@ -304,7 +451,7 @@ export default function SettingsContent() {
                 disabled={ratesLoading}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium disabled:opacity-50"
               >
-                {ratesLoading ? '...' : 'Обновить'}
+                {ratesLoading ? '...' : t('common.update')}
               </button>
             </div>
           </div>
@@ -313,13 +460,13 @@ export default function SettingsContent() {
         {/* PIN */}
         <section>
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-            Безопасность
+            {t('settings.security')}
           </div>
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
             {showPinSetup ? (
               <div className="p-4 space-y-3">
                 <div className="text-sm font-medium text-gray-700">
-                  {pinStep === 'enter' ? 'Введите новый PIN (4 цифры)' : 'Повторите PIN'}
+                  {pinStep === 'enter' ? t('settings.pinEnterNew') : t('settings.pinConfirm')}
                 </div>
                 <input
                   type="password"
@@ -354,13 +501,13 @@ export default function SettingsContent() {
                     }}
                     className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-medium"
                   >
-                    Отмена
+                    {t('common.cancel')}
                   </button>
                   {pinStep === 'confirm' && (
                     <button
                       onClick={async () => {
                         if (confirmPin !== newPin) {
-                          setPinError('PIN не совпадает');
+                          setPinError(t('settings.pinMismatch'));
                           setConfirmPin('');
                           return;
                         }
@@ -374,7 +521,7 @@ export default function SettingsContent() {
                       disabled={confirmPin.length !== 4}
                       className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-40"
                     >
-                      Установить
+                      {t('settings.pinSetup')}
                     </button>
                   )}
                 </div>
@@ -382,9 +529,9 @@ export default function SettingsContent() {
             ) : (
               <div className="p-4 flex items-center justify-between">
                 <div>
-                  <div className="font-medium text-gray-900">PIN-код</div>
+                  <div className="font-medium text-gray-900">{t('settings.pinCode')}</div>
                   <div className="text-xs text-gray-400">
-                    {pinEnabled ? 'Установлен' : 'Не установлен'}
+                    {pinEnabled ? t('settings.pinSet') : t('settings.pinNotSet')}
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -393,14 +540,14 @@ export default function SettingsContent() {
                       onClick={() => { removeAppPin(); setPinEnabled(false); }}
                       className="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium"
                     >
-                      Убрать
+                      {t('settings.pinRemove')}
                     </button>
                   )}
                   <button
                     onClick={() => setShowPinSetup(true)}
                     className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium"
                   >
-                    {pinEnabled ? 'Сменить' : 'Установить'}
+                    {pinEnabled ? t('settings.pinChange') : t('settings.pinSetup')}
                   </button>
                 </div>
               </div>

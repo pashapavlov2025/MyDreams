@@ -27,7 +27,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
           <div className="text-center">
             <div className="text-4xl mb-4">😵</div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-2">Что-то пошло не так</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h2>
             <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto break-all">
               {this.state.error?.message}
             </p>
@@ -38,7 +38,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
               }}
               className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-medium"
             >
-              Перезагрузить
+              Reload
             </button>
           </div>
         </div>

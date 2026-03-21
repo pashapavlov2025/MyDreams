@@ -1,17 +1,19 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslation, type TranslationKey } from '@/i18n';
 
-const tabs = [
-  { path: '/', label: 'Dashboard', icon: '◉' },
-  { path: '/update', label: 'Обновить', icon: '✎' },
-  { path: '/projects', label: 'Проекты', icon: '◫' },
-  { path: '/settings', label: 'Настройки', icon: '⚙' },
+const tabs: { path: string; labelKey: TranslationKey; icon: string }[] = [
+  { path: '/', labelKey: 'tabs.dashboard', icon: '◉' },
+  { path: '/update', labelKey: 'tabs.update', icon: '✎' },
+  { path: '/projects', labelKey: 'tabs.projects', icon: '◫' },
+  { path: '/settings', labelKey: 'tabs.settings', icon: '⚙' },
 ];
 
 export default function TabBar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50"
@@ -29,7 +31,7 @@ export default function TabBar() {
               }`}
             >
               <span className="text-xl leading-none">{tab.icon}</span>
-              <span className="text-[10px] mt-0.5 font-medium">{tab.label}</span>
+              <span className="text-[10px] mt-0.5 font-medium">{t(tab.labelKey)}</span>
             </button>
           );
         })}
