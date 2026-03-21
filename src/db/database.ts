@@ -35,15 +35,18 @@ class MyDreamsDB extends Dexie {
 
 export const db = new MyDreamsDB();
 
-export async function getSettings(): Promise<Settings> {
-  const existing = await db.settings.toCollection().first();
-  if (existing) return existing;
+export async function getSettings(): Promise<Settings | undefined> {
+  return db.settings.toCollection().first();
+}
 
-  const id = await db.settings.add({
-    baseCurrency: 'USD',
-    lastRatesUpdate: null,
-  });
-  return db.settings.get(id) as Promise<Settings>;
+export async function ensureSettings(): Promise<void> {
+  const existing = await db.settings.toCollection().first();
+  if (!existing) {
+    await db.settings.add({
+      baseCurrency: 'USD',
+      lastRatesUpdate: null,
+    });
+  }
 }
 
 export async function getDream(): Promise<Dream | undefined> {
