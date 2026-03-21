@@ -16,6 +16,7 @@ import { ACCOUNT_TYPE_KEYS, type AccountType } from '@/db/models';
 import { db } from '@/db/database';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { useProfile } from '@/hooks/useProfile';
+import { useRouter } from 'next/navigation';
 
 interface BankSubGroup {
   bankGroup: string;
@@ -36,6 +37,7 @@ export default function DashboardContent() {
   const baseCurrency = settings?.baseCurrency ?? 'USD';
   const { t } = useTranslation();
   const { profileId, profile, profiles, switchProfile } = useProfile();
+  const router = useRouter();
 
   const allSnapshots = useLiveQuery(async () => {
     const accs = await db.accounts.where('profileId').equals(profileId).toArray();
@@ -214,6 +216,37 @@ export default function DashboardContent() {
           <p className="text-gray-400 text-sm mt-1">
             {t('dashboard.goToSettings')}
           </p>
+        </div>
+      )}
+
+      {projectsWithPnL.length > 0 && (
+        <div className="mb-4">
+          <div className="px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            {t('projects.title')}
+          </div>
+          <div className="bg-white rounded-xl mx-4 overflow-hidden shadow-sm">
+            {projectsWithPnL.map((project) => {
+              const valueInBase = convertToBase(project.currentMarketValue, project.currency, baseCurrency);
+              return (
+                <button
+                  key={project.id}
+                  onClick={() => router.push(`/projects/${project.id}`)}
+                  className="w-full flex items-center px-4 py-3 border-b border-gray-50 last:border-0 text-left"
+                >
+                  <span className="text-xl mr-3">{project.stage === 'building' ? '🏗️' : '🏠'}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900">{project.name}</div>
+                    <div className={`text-xs font-medium ${project.pnl >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      P&L: {project.pnl >= 0 ? '+' : ''}{formatMoney(project.pnl, project.currency)}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-gray-900">{formatMoney(valueInBase, baseCurrency)}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
