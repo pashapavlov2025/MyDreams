@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 const TabBar = dynamic(() => import('@/components/TabBar'), { ssr: false });
+const AppProvider = dynamic(() => import('@/components/AppProvider'), { ssr: false });
 
 export const metadata: Metadata = {
   title: 'MyDreams',
@@ -24,10 +25,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru">
       <body className="bg-gray-50 text-gray-900 antialiased">
         <ErrorBoundary>
-          <div className="min-h-screen pb-20">
-            {children}
-          </div>
-          <TabBar />
+          <AppProvider>
+            <div className="min-h-screen pb-20">
+              {children}
+            </div>
+            <TabBar />
+          </AppProvider>
         </ErrorBoundary>
       </body>
     </html>

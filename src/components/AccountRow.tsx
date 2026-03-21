@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import type { AccountWithBalance } from '@/hooks/useAccounts';
 import { formatMoney, formatDateShort } from '@/lib/format';
 import { convertToBase } from '@/lib/currency';
@@ -12,15 +13,19 @@ interface AccountRowProps {
 }
 
 export default function AccountRow({ account, baseCurrency, indented }: AccountRowProps) {
+  const router = useRouter();
   const icon = account.icon || ACCOUNT_TYPE_ICONS[account.type] || '📦';
   const baseAmount = convertToBase(account.latestBalance, account.currency, baseCurrency);
   const showConverted = account.currency !== baseCurrency;
   const isImageIcon = icon.startsWith('data:');
 
   return (
-    <div className={`flex items-center py-3 bg-white border-b border-gray-100 last:border-b-0 ${
-      indented ? 'pl-7 pr-4' : 'px-4'
-    }`}>
+    <button
+      onClick={() => account.id && router.push(`/account/${account.id}`)}
+      className={`flex items-center py-3 bg-white border-b border-gray-100 last:border-b-0 w-full text-left active:bg-gray-50 transition-colors ${
+        indented ? 'pl-7 pr-4' : 'px-4'
+      }`}
+    >
       {!indented && (
         <div className="text-2xl mr-3 flex-shrink-0">
           {isImageIcon ? (
@@ -46,6 +51,7 @@ export default function AccountRow({ account, baseCurrency, indented }: AccountR
           </div>
         )}
       </div>
-    </div>
+      <span className="text-gray-300 ml-2">&#8250;</span>
+    </button>
   );
 }

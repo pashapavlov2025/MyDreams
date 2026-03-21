@@ -1,14 +1,18 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import DreamProgress from '@/components/DreamProgress';
 import AccountRow from '@/components/AccountRow';
+import NetWorthChart from '@/components/NetWorthChart';
+import AssetBreakdown from '@/components/AssetBreakdown';
 import { useAccountsWithBalances, type AccountWithBalance } from '@/hooks/useAccounts';
 import { useDream } from '@/hooks/useDream';
 import { useSettings } from '@/hooks/useCurrency';
 import { convertToBase } from '@/lib/currency';
 import { formatMoney } from '@/lib/format';
 import { ACCOUNT_TYPE_LABELS, type AccountType } from '@/db/models';
+import { db } from '@/db/database';
 
 interface BankSubGroup {
   bankGroup: string;
@@ -27,12 +31,57 @@ export default function DashboardContent() {
   const { settings } = useSettings();
   const baseCurrency = settings?.baseCurrency ?? 'USD';
 
+  // Get all snapshots to compute delta
+  const allSnapshots = useLiveQuery(() => db.snapshots.toArray(), [], []);
+  const allAccounts = useLiveQuery(() => db.accounts.filter((a) => !a.isArchived).toArray(), [], []);
+
   const netWorth = useMemo(() => {
     return accounts.reduce((sum, acc) => {
       const val = convertToBase(acc.latestBalance, acc.currency, baseCurrency);
       return acc.type === 'debt' ? sum - Math.abs(val) : sum + val;
     }, 0);
   }, [accounts, baseCurrency]);
+
+  // Compute delta: difference between latest and previous snapshot dates
+  const delta = useMemo(() => {
+    if (allSnapshots.length === 0 || allAccounts.length === 0) return null;
+
+    const accountMap = new Map(allAccounts.filter((a) => a.id).map((a) => [a.id!, a]));
+
+    // Group by date (day precision)
+    const dateMap = new Map<string, Map<number, number>>();
+    for (const snap of allSnapshots) {
+      const dateKey = new Date(snap.date).toISOString().slice(0, 10);
+      if (!dateMap.has(dateKey)) dateMap.set(dateKey, new Map());
+      dateMap.get(dateKey)!.set(snap.accountId, snap.amount);
+    }
+
+    const sortedDates = Array.from(dateMap.keys()).sort();
+    if (sortedDates.length < 2) return null;
+
+    // Build net worth for the two latest dates
+    const calcNetWorth = (upToDateIndex: number) => {
+      const balances = new Map<number, number>();
+      for (let i = 0; i <= upToDateIndex; i++) {
+        const daySnaps = dateMap.get(sortedDates[i])!;
+        daySnaps.forEach((amount, accId) => {
+          balances.set(accId, amount);
+        });
+      }
+      let nw = 0;
+      balances.forEach((balance, accId) => {
+        const acc = accountMap.get(accId);
+        if (!acc) return;
+        const converted = convertToBase(balance, acc.currency, baseCurrency);
+        nw += acc.type === 'debt' ? -Math.abs(converted) : converted;
+      });
+      return nw;
+    };
+
+    const currentNW = calcNetWorth(sortedDates.length - 1);
+    const prevNW = calcNetWorth(sortedDates.length - 2);
+    return currentNW - prevNW;
+  }, [allSnapshots, allAccounts, baseCurrency]);
 
   const groups = useMemo((): TypeGroup[] => {
     const typeMap = new Map<AccountType, AccountWithBalance[]>();
@@ -80,7 +129,15 @@ export default function DashboardContent() {
         <div className="text-3xl font-bold text-gray-900">
           {formatMoney(netWorth, baseCurrency)}
         </div>
+        {delta !== null && (
+          <div className={`text-sm font-medium mt-1 ${delta >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+            {delta >= 0 ? '+' : ''}{formatMoney(delta, baseCurrency)} с прошлого обновления
+          </div>
+        )}
       </div>
+
+      <NetWorthChart baseCurrency={baseCurrency} />
+      <AssetBreakdown accounts={accounts} baseCurrency={baseCurrency} />
 
       {groups.length > 0 ? (
         groups.map(({ type, subGroups }) => (

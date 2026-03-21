@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDream } from '@/hooks/useDream';
-import { useSettings } from '@/hooks/useCurrency';
+import { useSettings, useCurrencyRates } from '@/hooks/useCurrency';
 import { useAccounts, useAllAccounts } from '@/hooks/useAccounts';
 import AccountForm from '@/components/AccountForm';
-import { formatMoney } from '@/lib/format';
+import { formatMoney, formatDate } from '@/lib/format';
 import { getAvailableCurrencies } from '@/lib/currency';
 import { ACCOUNT_TYPE_ICONS, type AccountType, type Account } from '@/db/models';
+import { setAppPin, removeAppPin, hasPin } from '@/components/PinLock';
 
 export default function SettingsContent() {
   const { dream, updateDream } = useDream();
@@ -16,12 +17,24 @@ export default function SettingsContent() {
   const allAccounts = useAllAccounts();
   const currencies = getAvailableCurrencies();
 
+  const { loading: ratesLoading, lastUpdate: ratesLastUpdate, refreshRates } = useCurrencyRates();
+
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingDream, setEditingDream] = useState(false);
   const [dreamInput, setDreamInput] = useState('');
   const [dreamCurrency, setDreamCurrency] = useState('');
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [pinEnabled, setPinEnabled] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [pinStep, setPinStep] = useState<'enter' | 'confirm'>('enter');
+  const [pinError, setPinError] = useState('');
+
+  useEffect(() => {
+    setPinEnabled(hasPin());
+  }, []);
 
   const activeAccounts = allAccounts.filter((a) => !a.isArchived);
   const archivedAccounts = allAccounts.filter((a) => a.isArchived);
@@ -270,6 +283,130 @@ export default function SettingsContent() {
             </div>
           </section>
         )}
+
+        {/* Currency Rates */}
+        <section>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            Курсы валют
+          </div>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <div className="font-medium text-gray-900">Обновить курсы</div>
+                <div className="text-xs text-gray-400">
+                  {ratesLastUpdate
+                    ? `Обновлено: ${formatDate(ratesLastUpdate)}`
+                    : 'Не обновлялись'}
+                </div>
+              </div>
+              <button
+                onClick={refreshRates}
+                disabled={ratesLoading}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium disabled:opacity-50"
+              >
+                {ratesLoading ? '...' : 'Обновить'}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* PIN */}
+        <section>
+          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
+            Безопасность
+          </div>
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            {showPinSetup ? (
+              <div className="p-4 space-y-3">
+                <div className="text-sm font-medium text-gray-700">
+                  {pinStep === 'enter' ? 'Введите новый PIN (4 цифры)' : 'Повторите PIN'}
+                </div>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={pinStep === 'enter' ? newPin : confirmPin}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setPinError('');
+                    if (pinStep === 'enter') {
+                      setNewPin(val);
+                      if (val.length === 4) {
+                        setPinStep('confirm');
+                      }
+                    } else {
+                      setConfirmPin(val);
+                    }
+                  }}
+                  placeholder="••••"
+                  className="w-full px-4 py-3 bg-gray-100 rounded-xl text-center text-2xl tracking-[0.5em] text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  autoFocus
+                />
+                {pinError && <div className="text-red-500 text-sm">{pinError}</div>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowPinSetup(false);
+                      setNewPin('');
+                      setConfirmPin('');
+                      setPinStep('enter');
+                      setPinError('');
+                    }}
+                    className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-medium"
+                  >
+                    Отмена
+                  </button>
+                  {pinStep === 'confirm' && (
+                    <button
+                      onClick={async () => {
+                        if (confirmPin !== newPin) {
+                          setPinError('PIN не совпадает');
+                          setConfirmPin('');
+                          return;
+                        }
+                        await setAppPin(newPin);
+                        setPinEnabled(true);
+                        setShowPinSetup(false);
+                        setNewPin('');
+                        setConfirmPin('');
+                        setPinStep('enter');
+                      }}
+                      disabled={confirmPin.length !== 4}
+                      className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-40"
+                    >
+                      Установить
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-gray-900">PIN-код</div>
+                  <div className="text-xs text-gray-400">
+                    {pinEnabled ? 'Установлен' : 'Не установлен'}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {pinEnabled && (
+                    <button
+                      onClick={() => { removeAppPin(); setPinEnabled(false); }}
+                      className="px-3 py-2 bg-red-50 text-red-600 rounded-xl text-sm font-medium"
+                    >
+                      Убрать
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowPinSetup(true)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium"
+                  >
+                    {pinEnabled ? 'Сменить' : 'Установить'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </div>
   );

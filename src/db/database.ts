@@ -77,3 +77,7 @@ export async function getAccountSnapshots(accountId: number): Promise<BalanceSna
     .equals(accountId)
     .sortBy('date');
 }
+
+export async function getAllSnapshots(): Promise<BalanceSnapshot[]> {
+  return db.snapshots.toArray();
+}
