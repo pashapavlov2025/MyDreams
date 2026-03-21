@@ -7,16 +7,17 @@ import { useAccounts, useAllAccounts } from '@/hooks/useAccounts';
 import AccountForm from '@/components/AccountForm';
 import { formatMoney } from '@/lib/format';
 import { getAvailableCurrencies } from '@/lib/currency';
-import { ACCOUNT_TYPE_ICONS, type AccountType } from '@/db/models';
+import { ACCOUNT_TYPE_ICONS, type AccountType, type Account } from '@/db/models';
 
 export default function SettingsContent() {
   const { dream, updateDream } = useDream();
   const { settings, updateBaseCurrency } = useSettings();
-  const { addAccount, archiveAccount, deleteAccount } = useAccounts();
+  const { addAccount, updateAccount, archiveAccount, deleteAccount } = useAccounts();
   const allAccounts = useAllAccounts();
   const currencies = getAvailableCurrencies();
 
   const [showAccountForm, setShowAccountForm] = useState(false);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [editingDream, setEditingDream] = useState(false);
   const [dreamInput, setDreamInput] = useState('');
   const [dreamCurrency, setDreamCurrency] = useState('');
@@ -41,15 +42,30 @@ export default function SettingsContent() {
 
   const existingGroups = Array.from(new Set(allAccounts.map((a) => a.bankGroup).filter(Boolean))) as string[];
 
-  if (showAccountForm) {
+  if (showAccountForm || editingAccount) {
     return (
       <AccountForm
+        initialData={editingAccount ? {
+          name: editingAccount.name,
+          type: editingAccount.type,
+          currency: editingAccount.currency,
+          icon: editingAccount.icon,
+          bankGroup: editingAccount.bankGroup,
+        } : undefined}
         existingGroups={existingGroups}
         onSave={async (data) => {
-          await addAccount(data);
-          setShowAccountForm(false);
+          if (editingAccount?.id) {
+            await updateAccount(editingAccount.id, data);
+            setEditingAccount(null);
+          } else {
+            await addAccount(data);
+            setShowAccountForm(false);
+          }
         }}
-        onCancel={() => setShowAccountForm(false)}
+        onCancel={() => {
+          setShowAccountForm(false);
+          setEditingAccount(null);
+        }}
       />
     );
   }
@@ -163,21 +179,27 @@ export default function SettingsContent() {
                   key={acc.id}
                   className="flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0"
                 >
-                  <span className="text-xl mr-3 flex-shrink-0">
-                    {acc.icon?.startsWith('data:') ? (
-                      <img src={acc.icon} alt="" className="w-6 h-6 rounded-md object-cover" />
-                    ) : (
-                      acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'
-                    )}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-gray-900 truncate">{acc.name}</div>
-                    <div className="text-xs text-gray-400">
-                      {acc.bankGroup ? `${acc.bankGroup} · ` : ''}{acc.currency}
+                  <button
+                    onClick={() => setEditingAccount(acc)}
+                    className="flex items-center flex-1 min-w-0 text-left"
+                  >
+                    <span className="text-xl mr-3 flex-shrink-0">
+                      {acc.icon?.startsWith('data:') ? (
+                        <img src={acc.icon} alt="" className="w-6 h-6 rounded-md object-cover" />
+                      ) : (
+                        acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'
+                      )}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-900 truncate">{acc.name}</div>
+                      <div className="text-xs text-gray-400">
+                        {acc.bankGroup ? `${acc.bankGroup} · ` : ''}{acc.currency}
+                      </div>
                     </div>
-                  </div>
+                    <span className="text-gray-300 ml-2">›</span>
+                  </button>
                   {confirmDelete === acc.id ? (
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 ml-2">
                       <button
                         onClick={() => {
                           if (acc.id) deleteAccount(acc.id);
@@ -195,7 +217,7 @@ export default function SettingsContent() {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 ml-2">
                       <button
                         onClick={() => acc.id && archiveAccount(acc.id)}
                         className="px-2 py-1 text-xs text-gray-400"
