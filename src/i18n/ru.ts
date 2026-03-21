@@ -11,14 +11,14 @@ const ru = {
   'common.update': 'Обновить',
 
   // Tab bar
-  'tabs.dashboard': 'Dashboard',
+  'tabs.dashboard': 'Главная',
   'tabs.update': 'Обновить',
   'tabs.projects': 'Проекты',
   'tabs.settings': 'Настройки',
 
   // Dashboard
   'dashboard.title': 'MyDreams',
-  'dashboard.netWorth': 'Net Worth',
+  'dashboard.netWorth': 'Капитал',
   'dashboard.sinceLastUpdate': 'с прошлого обновления',
   'dashboard.addFirstAccount': 'Добавьте первый аккаунт',
   'dashboard.goToSettings': 'Перейдите в Настройки → Аккаунты',
@@ -94,7 +94,7 @@ const ru = {
   'pin.wrong': 'Неверный PIN',
 
   // Charts
-  'charts.netWorth': 'Net Worth',
+  'charts.netWorth': 'Капитал',
   'charts.assetBreakdown': 'Структура активов',
 
   // Error

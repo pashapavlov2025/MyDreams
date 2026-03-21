@@ -64,9 +64,6 @@ class MyDreamsDB extends Dexie {
 
 export const db = new MyDreamsDB();
 
-// Default profile ID (1 — created during migration)
-const DEFAULT_PROFILE_ID = 1;
-
 export async function ensureDefaultProfile(): Promise<number> {
   const profiles = await db.profiles.toArray();
   if (profiles.length === 0) {
@@ -109,12 +106,11 @@ export async function setDream(profileId: number, targetAmount: number, currency
 }
 
 export async function getLatestSnapshot(accountId: number): Promise<BalanceSnapshot | undefined> {
-  return db.snapshots
+  const snaps = await db.snapshots
     .where('accountId')
     .equals(accountId)
-    .reverse()
-    .sortBy('date')
-    .then((snaps) => snaps[0]);
+    .sortBy('date');
+  return snaps[snaps.length - 1];
 }
 
 export async function getAccountSnapshots(accountId: number): Promise<BalanceSnapshot[]> {
@@ -130,7 +126,7 @@ export async function getAllSnapshots(): Promise<BalanceSnapshot[]> {
 
 export async function seedDemoProfile(): Promise<number> {
   // Check if demo profile already exists
-  const existing = await db.profiles.where('isDemo').equals(1).first();
+  const existing = await db.profiles.filter((p) => p.isDemo).first();
   if (existing?.id) return existing.id;
 
   const profileId = await db.profiles.add({

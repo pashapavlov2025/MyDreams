@@ -35,9 +35,6 @@ export default function DashboardContent() {
   const { t } = useTranslation();
   const { profileId, profile, profiles, switchProfile } = useProfile();
 
-  // Get account IDs for current profile to filter snapshots
-  const profileAccountIds = useMemo(() => accounts.map((a) => a.id!), [accounts]);
-
   const allSnapshots = useLiveQuery(async () => {
     const accs = await db.accounts.where('profileId').equals(profileId).toArray();
     const ids = accs.map((a) => a.id!);

@@ -96,21 +96,22 @@ export async function updateAndCacheRates(): Promise<void> {
   const rates = await fetchLiveRates();
   setLiveRates(rates);
 
-  // Save to settings
-  const settings = await db.settings.toCollection().first();
-  if (settings?.id) {
-    await db.settings.update(settings.id, { lastRatesUpdate: new Date() });
-  }
+  // Update lastRatesUpdate on all settings records (rates are global)
+  const now = new Date();
+  await db.settings.toCollection().modify({ lastRatesUpdate: now });
 
-  // Cache rates in IndexedDB
+  // Cache rates in IndexedDB (upsert by currency pair)
   for (const [currency, rate] of Object.entries(rates)) {
     if (currency === 'USD') continue;
-    await db.currencyRates.put({
-      from: currency,
-      to: 'USD',
-      rate,
-      date: new Date(),
-    });
+    const existing = await db.currencyRates
+      .where('[from+to]')
+      .equals([currency, 'USD'])
+      .first();
+    if (existing?.id) {
+      await db.currencyRates.update(existing.id, { rate, date: now });
+    } else {
+      await db.currencyRates.add({ from: currency, to: 'USD', rate, date: now });
+    }
   }
 }
 

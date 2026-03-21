@@ -7,6 +7,7 @@ import { db, getAccountSnapshots } from '@/db/database';
 import { formatMoney, formatDate } from '@/lib/format';
 import { ACCOUNT_TYPE_ICONS } from '@/db/models';
 import { useTranslation, getDateLocale } from '@/i18n';
+import { useProfile } from '@/hooks/useProfile';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -24,10 +25,15 @@ export default function AccountHistoryContent({ accountId }: Props) {
   const router = useRouter();
   const { t, locale } = useTranslation();
   const dateLocale = getDateLocale(locale);
+  const { profileId } = useProfile();
 
   const account = useLiveQuery(
-    () => db.accounts.get(accountId),
-    [accountId]
+    async () => {
+      const acc = await db.accounts.get(accountId);
+      // Only show account if it belongs to current profile
+      return acc && acc.profileId === profileId ? acc : undefined;
+    },
+    [accountId, profileId]
   );
 
   const snapshots = useLiveQuery(
