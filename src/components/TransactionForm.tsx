@@ -47,14 +47,16 @@ export default function TransactionForm({ projectId, onSave, onCancel }: Transac
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div className="bg-white w-full rounded-t-2xl p-5 pb-[max(env(safe-area-inset-bottom),20px)] max-h-[85vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <button onClick={onCancel} className="text-gray-500 text-sm">{t('common.cancel')}</button>
-          <h2 className="text-base font-bold">{t('projects.addTransaction')}</h2>
-          <button onClick={handleSubmit} className="text-indigo-600 font-semibold text-sm">{t('common.save')}</button>
-        </div>
+    <div className="fixed inset-0 bg-white z-50 flex flex-col">
+      {/* Fixed header */}
+      <div className="flex-shrink-0 flex justify-between items-center px-4 py-3 border-b border-gray-200 pt-[max(env(safe-area-inset-top),12px)]">
+        <button onClick={onCancel} className="text-gray-500 text-sm">{t('common.cancel')}</button>
+        <h2 className="text-base font-bold">{t('projects.addTransaction')}</h2>
+        <button onClick={handleSubmit} className="text-indigo-600 font-semibold text-sm">{t('common.save')}</button>
+      </div>
 
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 pb-[max(env(safe-area-inset-bottom),20px)]">
         <div className="space-y-4">
           <div>
             <label className="text-xs text-gray-500 mb-1 block">{t('projects.stage')}</label>
