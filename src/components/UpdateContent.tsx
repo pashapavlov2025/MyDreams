@@ -63,8 +63,12 @@ export default function UpdateContent() {
               return (
                 <div key={acc.id} className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center mb-2">
-                    <span className="text-xl mr-2">{icon}</span>
-                    <span className="font-medium text-gray-900">{acc.name}</span>
+                    <span className="text-xl mr-2 flex-shrink-0">
+                      {icon.startsWith('data:') ? (
+                        <img src={icon} alt="" className="w-6 h-6 rounded-md object-cover" />
+                      ) : icon}
+                    </span>
+                    <span className="font-medium text-gray-900 truncate">{acc.name}</span>
                     <span className="ml-auto text-xs text-gray-400">{acc.currency}</span>
                   </div>
                   <div className="flex items-center gap-2">
