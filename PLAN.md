@@ -1,55 +1,70 @@
 # MyDreams - Personal Finance & Asset Tracker
 
 ## Vision
-Персональное iOS-приложение для отслеживания всех активов и обязательств с минимальными усилиями.
+Персональное веб-приложение (PWA) для отслеживания всех активов и обязательств с минимальными усилиями.
 Подход: **snapshot-based** — раз в месяц (или когда хочется) обновляешь балансы, приложение строит историю.
 Отдельный модуль для инвестиционных проектов (вилла на Бали и подобные) с полным P&L.
 
 ## Tech Stack
-- **UI**: SwiftUI (iOS 17+)
-- **Language**: Swift 5.9+
-- **Data**: SwiftData (modern Core Data replacement) + CloudKit (iCloud sync)
-- **Architecture**: MVVM
-- **Charts**: Swift Charts (built-in framework)
-- **Currency rates**: Free API (frankfurter.app или exchangerate.host)
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **UI**: Tailwind CSS, мобильный дизайн (iOS-like)
+- **Data**: IndexedDB (Dexie.js v4) — клиентское хранилище
+- **Charts**: Recharts (area charts, pie charts)
+- **Currency rates**: frankfurter.app (фиат) + CoinGecko (крипто)
+- **Hosting**: Vercel
+- **Security**: PIN-код (SHA-256, sessionStorage)
 
 ## Ключевые решения
-- SwiftData вместо Core Data — проще, современнее, нативно работает с CloudKit
-- iOS 17+ — даёт доступ к SwiftData и современным API, покрывает ~90% устройств
-- Никаких внешних зависимостей на старте — всё из стандартных фреймворков Apple
+- Web вместо iOS — доступ с любого устройства, быстрый деплой через Vercel
+- IndexedDB (Dexie.js) — работает offline, без бэкенда на старте
 - Snapshot-подход: каждая запись = "на эту дату баланс такой-то"
+- PWA: можно установить на Home Screen
 
 ---
 
 ## Фазы разработки
 
-### ФАЗА 1: Фундамент (MVP - минимально работающее приложение)
+### ФАЗА 1: Фундамент (MVP) ✅ ЗАВЕРШЕНА
 **Цель**: Можно вносить аккаунты, записывать балансы, видеть тотал.
 
-- [ ] **1.1** Создать Xcode-проект (SwiftUI App, SwiftData)
-- [ ] **1.2** Модели данных:
-  - `Account` (название, тип, валюта, иконка, порядок сортировки, isArchived)
+- [x] **1.1** Создать Next.js проект с Tailwind CSS
+- [x] **1.2** Модели данных (Dexie.js / IndexedDB):
+  - `Account` (название, тип, валюта, иконка, банк/группа, порядок сортировки, isArchived)
   - `BalanceSnapshot` (аккаунт, дата, сумма)
-  - `Currency` (код, символ)
+  - `CurrencyRate` (from, to, rate, date)
   - Типы аккаунтов: банк, наличные, брокер, крипто, недвижимость, долг, другое
-- [ ] **1.3** Главный экран — Dashboard:
-  - Общий тотал в базовой валюте
-  - Список аккаунтов с текущими балансами
+- [x] **1.3** Главный экран — Dashboard:
+  - Общий тотал (Net Worth) в базовой валюте
+  - Двухуровневая группировка: по типу → по банку
   - Дата последнего обновления каждого аккаунта
-- [ ] **1.4** Экран "Обновить балансы" (bulk update):
+- [x] **1.4** Экран "Обновить балансы" (bulk update):
   - Список всех аккаунтов с полями для ввода нового баланса
-  - Кнопка "Сохранить snapshot" — записывает все изменённые балансы с текущей датой
-- [ ] **1.5** Добавление/редактирование аккаунта
-- [ ] **1.6** Базовая конвертация валют (захардкоженные курсы для начала)
+  - Кнопка "Сохранить" — записывает все изменённые балансы с текущей датой
+- [x] **1.5** Добавление / редактирование / архивирование / удаление аккаунта
+- [x] **1.6** Базовая конвертация валют (захардкоженные курсы как fallback)
+- [x] **1.7** *(бонус)* Группировка аккаунтов по банкам (Revolut, Tinkoff...)
+- [x] **1.8** *(бонус)* Кастомные иконки: emoji-пикер + загрузка картинки
 
-### ФАЗА 2: История и аналитика
-**Цель**: Видеть как менялось состояние во времени.
+### ФАЗА 2: История, аналитика, безопасность ✅ ЗАВЕРШЕНА
+**Цель**: Видеть как менялось состояние во времени. Базовая защита данных.
 
-- [ ] **2.1** Экран истории по аккаунту (список снапшотов + график)
-- [ ] **2.2** График общего Net Worth по времени (Swift Charts)
-- [ ] **2.3** Breakdown по типам активов (pie chart)
-- [ ] **2.4** Дельта: "+$X / -$X с прошлого снапшота" на Dashboard
-- [ ] **2.5** Онлайн-курсы валют (API интеграция)
+- [x] **2.1** Экран истории по аккаунту (`/account/[id]`):
+  - Список снапшотов с дельтами между ними
+  - Area chart баланса по времени
+  - Клик на аккаунт на дашборде → переход в историю
+- [x] **2.2** График общего Net Worth по времени (Recharts AreaChart)
+- [x] **2.3** Breakdown по типам активов (donut chart с процентами)
+- [x] **2.4** Дельта: "+$X / -$X с прошлого обновления" на Dashboard
+- [x] **2.5** Онлайн-курсы валют:
+  - Фиат: frankfurter.app API
+  - Крипто: CoinGecko API
+  - Авто-обновление каждые 4 часа + ручное обновление в настройках
+  - Кеширование в IndexedDB, fallback на захардкоженные курсы
+- [x] **2.6** *(бонус)* PIN-код на вход:
+  - 4-значный PIN, SHA-256 хеш в localStorage
+  - Сессионная разблокировка (один раз за сессию браузера)
+  - Установка / смена / удаление PIN в настройках
 
 ### ФАЗА 3: Инвестиционные проекты (Вилла на Бали и подобные)
 **Цель**: Полный P&L по проектам типа "строящаяся вилла".
@@ -68,78 +83,65 @@
 - [ ] **3.4** ROI калькулятор
 - [ ] **3.5** Проекты учитываются в общем Net Worth
 
-### ФАЗА 4: iCloud Sync
-**Цель**: Данные синхронизируются через iCloud.
+### ФАЗА 4: Бэкенд и синхронизация
+**Цель**: Данные не теряются, доступны с любого устройства.
 
-- [ ] **4.1** Включить CloudKit в SwiftData
-- [ ] **4.2** Настроить CloudKit container в Apple Developer Console
-- [ ] **4.3** Тестирование синхронизации между устройствами
-- [ ] **4.4** Обработка конфликтов
+- [ ] **4.1** Бэкенд (Supabase или Firebase):
+  - Авторизация (email / Google)
+  - Хранение данных в облаке
+- [ ] **4.2** Синхронизация IndexedDB ↔ облако
+- [ ] **4.3** Обработка конфликтов при одновременном редактировании
+- [ ] **4.4** E2E шифрование данных (клиентский ключ из пароля)
 
 ### ФАЗА 5: Polish & UX
 **Цель**: Приятный, удобный UI.
 
-- [ ] **5.1** Тёмная тема (автоматически через SwiftUI)
-- [ ] **5.2** Иконки для типов аккаунтов (SF Symbols)
-- [ ] **5.3** Haptic feedback
-- [ ] **5.4** Widget для Home Screen (общий тотал)
-- [ ] **5.5** Face ID / Touch ID для входа (опционально)
-- [ ] **5.6** Экспорт данных (CSV)
-- [ ] **5.7** Онбординг для первого запуска
-- [ ] **5.8** App Icon и Launch Screen
-
-### ФАЗА 6: App Store Publication
-**Цель**: Приложение в App Store.
-
-- [ ] **6.1** Apple Developer Program ($99/год) — регистрация
-- [ ] **6.2** App Store Connect: создать приложение
-- [ ] **6.3** Скриншоты для App Store (6.7", 6.1", iPad)
-- [ ] **6.4** Описание, ключевые слова, категория
-- [ ] **6.5** Privacy Policy (обязательно даже для бесплатного приложения)
-- [ ] **6.6** Archive & Upload через Xcode
-- [ ] **6.7** Подача на Review
-- [ ] **6.8** Релиз!
+- [ ] **5.1** Тёмная тема
+- [ ] **5.2** Haptic feedback (PWA на iOS)
+- [ ] **5.3** Экспорт данных (CSV / JSON)
+- [ ] **5.4** Онбординг для первого запуска
+- [ ] **5.5** Push-уведомления: "Пора обновить балансы"
+- [ ] **5.6** Drag & drop сортировка аккаунтов
 
 ---
 
-## Структура проекта (предварительная)
+## Структура проекта
 
 ```
-MyDreams/
-├── MyDreamsApp.swift          # Entry point
-├── Models/
-│   ├── Account.swift          # Account model
-│   ├── BalanceSnapshot.swift   # Balance snapshot model
-│   ├── Currency.swift          # Currency enum/model
-│   └── InvestmentProject.swift # Investment project model
-├── Views/
-│   ├── Dashboard/
-│   │   ├── DashboardView.swift
-│   │   └── AccountRowView.swift
-│   ├── Accounts/
-│   │   ├── AccountDetailView.swift
-│   │   └── AccountFormView.swift
-│   ├── Snapshot/
-│   │   └── BulkUpdateView.swift
-│   ├── History/
-│   │   ├── HistoryView.swift
-│   │   └── NetWorthChartView.swift
-│   └── Projects/
-│       ├── ProjectListView.swift
-│       ├── ProjectDetailView.swift
-│       └── ProjectTransactionView.swift
-├── ViewModels/
-│   ├── DashboardViewModel.swift
-│   └── CurrencyService.swift
-└── Utils/
-    └── Extensions.swift
+src/
+├── app/
+│   ├── layout.tsx              # Root layout + AppProvider + TabBar
+│   ├── page.tsx                # Dashboard (home)
+│   ├── account/[id]/page.tsx   # Account history
+│   ├── update/page.tsx         # Bulk balance update
+│   ├── projects/page.tsx       # Investment projects
+│   └── settings/page.tsx       # Settings
+├── components/
+│   ├── AppProvider.tsx          # Currency rates loader + PinLock wrapper
+│   ├── PinLock.tsx              # PIN-code lock screen
+│   ├── DashboardContent.tsx     # Main dashboard with NW, delta, charts
+│   ├── AccountRow.tsx           # Single account row (clickable → history)
+│   ├── AccountForm.tsx          # Add/edit account form
+│   ├── AccountHistoryContent.tsx # Account history with chart
+│   ├── NetWorthChart.tsx        # NW area chart over time
+│   ├── AssetBreakdown.tsx       # Donut chart by asset type
+│   ├── DreamProgress.tsx        # Dream goal progress bar
+│   ├── UpdateContent.tsx        # Bulk update page
+│   ├── SettingsContent.tsx      # Settings page (dream, currency, accounts, PIN)
+│   ├── TabBar.tsx               # Bottom navigation
+│   └── ErrorBoundary.tsx        # Error handling
+├── hooks/
+│   ├── useAccounts.ts           # CRUD + accounts with balances
+│   ├── useCurrency.ts           # Settings + live rates hook
+│   ├── useDream.ts              # Dream goal CRUD
+│   └── useSnapshots.ts          # Bulk snapshot update
+├── db/
+│   ├── database.ts              # Dexie.js DB schema + queries
+│   └── models.ts                # TypeScript interfaces
+└── lib/
+    ├── currency.ts              # Conversion, live rates, API fetch
+    └── format.ts                # Money & date formatting
 ```
-
-## Что нужно для начала работы
-1. ✅ Git репозиторий (уже есть)
-2. Писать Swift-код через Claude Code с телефона
-3. Периодически открывать проект в Xcode на Mac для сборки и тестирования
-4. Apple Developer Account для публикации ($99/год)
 
 ## Приоритеты
 - **Простота ввода данных** > красота UI
