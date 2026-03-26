@@ -33,6 +33,11 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // Sync <html lang="..."> attribute with current locale
+  useEffect(() => {
+    document.documentElement.lang = locale === 'ru' ? 'ru-RU' : 'en-US';
+  }, [locale]);
+
   const setLocale = useCallback((l: Locale) => {
     setLocaleState(l);
     localStorage.setItem(LOCALE_STORAGE_KEY, l);

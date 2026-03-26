@@ -1,6 +1,6 @@
 import { getCurrencySymbol } from './currency';
 
-export function formatMoney(amount: number, currency: string): string {
+export function formatMoney(amount: number, currency: string, locale: string = 'en-US'): string {
   const symbol = getCurrencySymbol(currency);
   const abs = Math.abs(amount);
 
@@ -8,9 +8,9 @@ export function formatMoney(amount: number, currency: string): string {
   if (abs >= 1_000_000) {
     formatted = (abs / 1_000_000).toFixed(2) + 'M';
   } else if (abs >= 1_000) {
-    formatted = abs.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    formatted = abs.toLocaleString(locale, { maximumFractionDigits: 0 });
   } else {
-    formatted = abs.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    formatted = abs.toLocaleString(locale, { maximumFractionDigits: 2 });
   }
 
   const sign = amount < 0 ? '-' : '';

@@ -1,14 +1,11 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import LoadingScreen from '@/components/LoadingScreen';
 
 const SettingsContent = dynamic(() => import('@/components/SettingsContent'), {
   ssr: false,
-  loading: () => (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-gray-400">Загрузка...</div>
-    </div>
-  ),
+  loading: () => <LoadingScreen />,
 });
 
 export default function Page() {

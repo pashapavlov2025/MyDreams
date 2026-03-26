@@ -95,6 +95,7 @@ export default function UpdateContent() {
           <button
             onClick={() => setShowAccountForm(true)}
             className="w-10 h-10 flex items-center justify-center text-indigo-600 text-2xl font-light"
+            aria-label={t('common.addAccount')}
           >
             +
           </button>

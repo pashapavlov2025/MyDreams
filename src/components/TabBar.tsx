@@ -16,7 +16,7 @@ export default function TabBar() {
   const { t } = useTranslation();
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50"
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-gray-200 z-50" aria-label="Main navigation"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex justify-around items-center h-14">
@@ -36,6 +36,6 @@ export default function TabBar() {
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 }

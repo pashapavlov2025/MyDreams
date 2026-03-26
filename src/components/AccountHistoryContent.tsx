@@ -69,7 +69,7 @@ export default function AccountHistoryContent({ accountId }: Props) {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 pt-[max(env(safe-area-inset-top),12px)]">
         <div className="flex items-center">
-          <button onClick={() => router.back()} className="text-indigo-600 font-medium mr-3">
+          <button onClick={() => router.back()} className="text-indigo-600 font-medium mr-3" aria-label={t('common.goBack')}>
             &#8592;
           </button>
           <div className="flex items-center gap-2 flex-1">

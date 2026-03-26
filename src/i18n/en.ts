@@ -11,6 +11,9 @@ const en: Record<TranslationKey, string> = {
   'common.loading': 'Loading...',
   'common.reload': 'Reload',
   'common.update': 'Update',
+  'common.goBack': 'Go back',
+  'common.addAccount': 'Add account',
+  'common.addProject': 'Add project',
 
   // Tab bar
   'tabs.dashboard': 'Dashboard',

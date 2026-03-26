@@ -9,6 +9,9 @@ const ru = {
   'common.loading': 'Загрузка...',
   'common.reload': 'Перезагрузить',
   'common.update': 'Обновить',
+  'common.goBack': 'Назад',
+  'common.addAccount': 'Добавить аккаунт',
+  'common.addProject': 'Добавить проект',
 
   // Tab bar
   'tabs.dashboard': 'Главная',

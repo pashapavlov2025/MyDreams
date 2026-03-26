@@ -26,9 +26,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-gray-50 text-gray-900 antialiased">
         <ErrorBoundary>
           <AppProvider>
-            <div className="min-h-screen pb-20">
+            <main className="min-h-screen pb-20">
               {children}
-            </div>
+            </main>
             <TabBar />
           </AppProvider>
         </ErrorBoundary>
