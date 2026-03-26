@@ -121,7 +121,8 @@ const data = useLiveQuery(
 | `DashboardContent` | Net Worth (аккаунты + проекты), delta, графики, группировка |
 | `ProjectsContent` | Список проектов с суммарной стоимостью |
 | `ProjectDetailContent` | P&L проекта: вложено/доход/расходы/ROI + timeline транзакций |
-| `TabBar` | Нижняя навигация: Dashboard, Accounts, Projects, Settings |
+| `TabBar` | Нижняя навигация (`<nav>`): Dashboard, Accounts, Projects, Settings |
+| `LoadingScreen` | Локализованный loading spinner, используется в dynamic() импортах |
 
 ### Формы
 
@@ -177,8 +178,9 @@ npm run open:ios       # открыть в Xcode
 |------|--------|-----|
 | 1. MVP | ✅ | Аккаунты, балансы, Dashboard, Net Worth |
 | 2. Аналитика | ✅ | Графики, история, курсы валют, PIN |
-| 2.5 Архитектура | ✅ | i18n, мульти-профиль, демо |
+| 2.5 Архитектура | ✅ | i18n, мульти-профиль, демо, базовый a11y |
 | 3. Проекты | ✅ | Инвест. проекты, P&L, ROI, транзакции |
+| 3.5 iOS/App Store | 🔧 | Capacitor сборка готова, нужен Xcode для публикации |
 | 4. Бэкенд | 📋 | Supabase/Firebase, синхронизация, E2E шифрование |
 | 5. Polish | 📋 | Тёмная тема, экспорт, онбординг, push |
 
