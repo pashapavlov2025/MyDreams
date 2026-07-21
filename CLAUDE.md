@@ -70,7 +70,7 @@ src/
 
 ## Database (Dexie.js)
 
-### Таблицы (V2, текущая)
+### Таблицы (V3, текущая)
 
 ```
 profiles:             ++id, name, isDemo
@@ -79,6 +79,7 @@ snapshots:            ++id, accountId, date
 currencyRates:        ++id, [from+to], date
 projects:             ++id, profileId, name, stage
 projectTransactions:  ++id, projectId, type, date
+projectValuations:    ++id, projectId, date
 dreams:               ++id, profileId
 settings:             ++id, profileId
 ```
@@ -90,6 +91,7 @@ settings:             ++id, profileId
 - **BalanceSnapshot**: `{accountId, date, amount}`
 - **InvestmentProject**: `{profileId, name, description, stage, currency, currentMarketValue}`
 - **ProjectTransaction**: `{projectId, type, amount, date, category, description}`
+- **ProjectValuation**: `{projectId, date, value}` — оценка на дату, как снапшот у счёта
 - **Dream**: `{profileId, targetAmount, currency}`
 - **Settings**: `{profileId, baseCurrency, lastRatesUpdate}`
 
@@ -107,9 +109,10 @@ TransactionType = 'tranche' | 'construction_expense' | 'rental_income' | 'operat
 |------|-----------|
 | `useAccounts()` | CRUD аккаунтов + `useAccountsWithBalances()` с последним балансом |
 | `useProjects()` | CRUD проектов + `useProjectsWithPnL()` с расчётом P&L и ROI |
+| `useProjectValuations(id)` | История оценок проекта |
 | `useProjectTransactions(id)` | CRUD транзакций проекта |
 | `useDream()` | Цель (мечта) — get/set targetAmount |
-| `useSnapshots()` | Массовое создание снапшотов (экран Update) |
+| `useSnapshots()` | Массовое сохранение балансов (обёртка над `lib/snapshots.ts`) |
 | `useCurrency()` | Настройки + автоподгрузка курсов (stale > 4ч) |
 | `useProfile()` | Контекст профиля + переключение + создание/удаление |
 
@@ -150,8 +153,54 @@ const data = useLiveQuery(
 ```
 Net Worth = Σ(аккаунты, конвертированные в baseCurrency)
           - Σ(долги, |сумма| в baseCurrency)
-          + Σ(проекты, marketValue в baseCurrency)
+          + Σ(проекты, currentValue в baseCurrency)
 ```
+
+Ряд капитала по времени и дельта считаются одной функцией —
+`buildNetWorthSeries()` в `lib/netWorth.ts`. Раньше график и дельта имели
+каждый свою копию логики и расходились.
+
+## Инвестиционные проекты
+
+### Стадия определяет, как проект входит в капитал
+
+```
+стройка       → по выплаченному (транши + расходы на стройку)
+эксплуатация  → по последней рыночной оценке
+```
+
+Смысл: пока идёт стройка, актива у владельца нет — есть замороженные деньги.
+Учитывать по оценке значило бы рисовать прибыль, которой не существует.
+Раньше проект всегда шёл по `currentMarketValue`, и капитал был завышен
+на невыплаченную часть.
+
+Если у застройщика рассрочка после сдачи, остаток заводится **обычным счётом
+типа `debt`** — отдельного поля для этого нет и не нужно.
+
+### P&L и ROI
+
+```
+P&L = (currentValue − totalInvested) + операционная прибыль
+ROI = P&L / totalInvested
+```
+
+На стройке `currentValue == totalInvested`, поэтому P&L честно равен нулю.
+
+### Оценки живут в истории
+
+`projectValuations` — одна запись на проект в день, повторный ввод за тот же
+день перезаписывает (`setProjectValuation`). Обновлять раз в квартал достаточно.
+
+**Единственный источник правды — история.** Поле `currentMarketValue` на самом
+проекте осталось только как совместимость со старыми бэкапами и как fallback,
+если истории ещё нет. Ничего его больше не пишет, кроме миграции V3.
+Поэтому в `ProjectForm` **нет поля оценки** — иначе сохранение формы затирало бы
+свежую запись старым значением.
+
+### Точка перехода между стадиями
+
+Отдельного поля «дата сдачи» нет: в `projectValueAt()` переходом служит первая
+внесённая оценка. До неё проект считается по вложенному, после — по оценке.
 
 ## i18n
 
@@ -178,6 +227,20 @@ npm run open:ios       # открыть в Xcode
 ### Плагины
 - `@capacitor/status-bar` — белый статусбар
 - `@capacitor/keyboard` — авторесайз при клавиатуре
+
+## Снапшоты балансов
+
+`lib/snapshots.ts` — **одна запись на счёт в день**. Повторное сохранение за
+тот же день перезаписывает, сохранение без изменения суммы не создаёт записи
+вообще.
+
+Раньше каждое нажатие «Сохранить» добавляло новый снапшот: за вечер ввода
+данных накапливались десятки копий с одной датой. Из-за этого пропадала дельта
+на дашборде (она считается между разными **датами**), в истории счёта висели
+одинаковые строки, а бэкап распухал вчетверо. Миграция V3 схлопывает уже
+накопившиеся дубли, оставляя последнюю запись за день.
+
+Логика лежит в `lib/`, а не в хуке, чтобы её можно было тестировать.
 
 ## Валюта и форматирование
 

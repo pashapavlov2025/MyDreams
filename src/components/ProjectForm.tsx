@@ -8,30 +8,26 @@ import { useTranslation, type TranslationKey } from '@/i18n';
 interface ProjectFormProps {
   project?: InvestmentProject;
   /**
-   * Актуальная оценка из истории. Поле currentMarketValue на самом проекте —
-   * лишь зеркало последней записи и может отставать, поэтому подставлять
-   * его в форму нельзя: сохранение затёрло бы свежую оценку старой.
+   * Рыночной оценки здесь намеренно нет: она живёт в истории оценок
+   * (секция «История оценок» на экране проекта). Держать её ещё и тут
+   * значило бы иметь два источника правды — при сохранении формы свежая
+   * запись затиралась бы старым значением.
    */
-  currentValuation?: number;
   onSave: (data: {
     name: string;
     description: string;
     stage: ProjectStage;
     currency: string;
-    currentMarketValue: number;
   }) => void;
   onCancel: () => void;
 }
 
-export default function ProjectForm({ project, currentValuation, onSave, onCancel }: ProjectFormProps) {
+export default function ProjectForm({ project, onSave, onCancel }: ProjectFormProps) {
   const { t } = useTranslation();
   const [name, setName] = useState(project?.name ?? '');
   const [description, setDescription] = useState(project?.description ?? '');
   const [stage, setStage] = useState<ProjectStage>(project?.stage ?? 'building');
   const [currency, setCurrency] = useState(project?.currency ?? 'USD');
-  const [marketValue, setMarketValue] = useState(
-    (currentValuation ?? project?.currentMarketValue)?.toString() ?? ''
-  );
 
   const currencies = getAvailableCurrencies();
 
@@ -42,7 +38,6 @@ export default function ProjectForm({ project, currentValuation, onSave, onCance
       description: description.trim(),
       stage,
       currency,
-      currentMarketValue: Number(marketValue) || 0,
     });
   };
 
@@ -103,18 +98,6 @@ export default function ProjectForm({ project, currentValuation, onSave, onCance
                 ))}
               </select>
             </div>
-          </div>
-
-          <div>
-            <label className="text-xs text-gray-500 mb-1 block">{t('projects.marketValue')}</label>
-            <input
-              type="number"
-              inputMode="decimal"
-              value={marketValue}
-              onChange={(e) => setMarketValue(e.target.value)}
-              placeholder="0"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
           </div>
         </div>
       </div>

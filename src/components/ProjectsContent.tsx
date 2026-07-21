@@ -102,7 +102,8 @@ export default function ProjectsContent() {
       {showForm && (
         <ProjectForm
           onSave={async (data) => {
-            await addProject(data);
+            // Оценка вносится отдельно, на экране проекта
+            await addProject({ ...data, currentMarketValue: 0 });
             setShowForm(false);
           }}
           onCancel={() => setShowForm(false)}
