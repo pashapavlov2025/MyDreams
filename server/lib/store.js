@@ -27,6 +27,14 @@ export async function saveSubscription({ subscription, cadence, tz }) {
   return id;
 }
 
+/** Сколько подписок уже лежит, не считая переподписку этого же устройства. */
+export async function countSubscriptions(excludeEndpoint) {
+  const ids = await redis.smembers(SET_KEY);
+  if (!ids) return 0;
+  const skip = excludeEndpoint ? subscriptionId(excludeEndpoint) : null;
+  return ids.filter((id) => id !== skip).length;
+}
+
 export async function deleteSubscription(endpoint) {
   const id = subscriptionId(endpoint);
   await redis.del(subKey(id));
