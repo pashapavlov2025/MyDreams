@@ -192,6 +192,14 @@ const en: Record<TranslationKey, string> = {
   'push.errorInstall': 'Add the app to your Home Screen first: Share → Add to Home Screen',
   'push.errorFailed': 'Could not enable notifications',
   'push.note': 'The server stores only a delivery address and your chosen schedule. Balances stay on your device.',
+
+  // Backup reminder
+  'backup.lastBackup': 'Last backup',
+  'backupReminder.title': 'No backup for a while',
+  'backupReminder.never': 'You have never made a backup',
+  'backupReminder.daysAgo': 'Days since last backup',
+  'backupReminder.action': 'Back up now',
+  'backupReminder.later': 'Later',
 };
 
 export default en;

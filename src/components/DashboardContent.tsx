@@ -6,6 +6,7 @@ import DreamProgress from '@/components/DreamProgress';
 import AccountRow from '@/components/AccountRow';
 import NetWorthChart from '@/components/NetWorthChart';
 import AssetBreakdown from '@/components/AssetBreakdown';
+import BackupReminder from '@/components/BackupReminder';
 import { useAccountsWithBalances, type AccountWithBalance } from '@/hooks/useAccounts';
 import { useProjectsWithPnL } from '@/hooks/useProjects';
 import { useDream } from '@/hooks/useDream';
@@ -171,6 +172,8 @@ export default function DashboardContent() {
           </div>
         )}
       </div>
+
+      <BackupReminder hasData={accounts.length > 0 || projectsWithPnL.length > 0} />
 
       <NetWorthChart baseCurrency={baseCurrency} />
       <AssetBreakdown accounts={accounts} baseCurrency={baseCurrency} />

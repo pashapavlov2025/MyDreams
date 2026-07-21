@@ -190,6 +190,14 @@ const ru = {
   'push.errorInstall': 'Сначала добавьте приложение на домашний экран: Поделиться → «На экран Домой»',
   'push.errorFailed': 'Не удалось включить уведомления',
   'push.note': 'На сервере хранится только адрес для доставки уведомлений и выбранная периодичность. Балансы остаются на устройстве.',
+
+  // Backup reminder
+  'backup.lastBackup': 'Последний бэкап',
+  'backupReminder.title': 'Давно не делали бэкап',
+  'backupReminder.never': 'Резервная копия ни разу не создавалась',
+  'backupReminder.daysAgo': 'Дней с последнего бэкапа',
+  'backupReminder.action': 'Сделать бэкап',
+  'backupReminder.later': 'Позже',
 } as const;
 
 export type TranslationKey = keyof typeof ru;

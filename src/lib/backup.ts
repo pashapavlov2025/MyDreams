@@ -72,6 +72,47 @@ export function backupStats(backup: Backup): BackupStats {
   };
 }
 
+export const LAST_BACKUP_KEY = 'mydreams_last_backup';
+export const BACKUP_SNOOZE_KEY = 'mydreams_backup_snooze';
+
+/** Порог, после которого напоминаем сделать бэкап. */
+export const BACKUP_STALE_DAYS = 30;
+
+export function markBackupDone(): void {
+  localStorage.setItem(LAST_BACKUP_KEY, new Date().toISOString());
+  localStorage.removeItem(BACKUP_SNOOZE_KEY);
+}
+
+export function getLastBackupAt(): Date | null {
+  if (typeof localStorage === 'undefined') return null;
+  const raw = localStorage.getItem(LAST_BACKUP_KEY);
+  if (!raw) return null;
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+export function daysSince(date: Date): number {
+  return Math.floor((Date.now() - date.getTime()) / 86400000);
+}
+
+export function snoozeBackupReminder(days = 7): void {
+  const until = new Date(Date.now() + days * 86400000);
+  localStorage.setItem(BACKUP_SNOOZE_KEY, until.toISOString());
+}
+
+/**
+ * Напоминать ли о бэкапе. Пустое приложение не трогаем — там нечего терять.
+ */
+export function shouldRemindBackup(hasData: boolean): boolean {
+  if (!hasData || typeof localStorage === 'undefined') return false;
+
+  const snoozeRaw = localStorage.getItem(BACKUP_SNOOZE_KEY);
+  if (snoozeRaw && new Date(snoozeRaw).getTime() > Date.now()) return false;
+
+  const last = getLastBackupAt();
+  return last === null || daysSince(last) >= BACKUP_STALE_DAYS;
+}
+
 export function backupFilename(date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `mydreams-${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}.json`;

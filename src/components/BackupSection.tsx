@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   createBackup,
   parseBackup,
@@ -8,6 +8,8 @@ import {
   backupFilename,
   restoreBackup,
   deliverBackupFile,
+  markBackupDone,
+  getLastBackupAt,
   type Backup,
   type RestoreMode,
 } from '@/lib/backup';
@@ -28,17 +30,28 @@ export default function BackupSection() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [status, setStatus] = useState<Status>({ kind: 'idle' });
+  const [lastBackup, setLastBackup] = useState<Date | null>(null);
   const [pending, setPending] = useState<Backup | null>(null);
   const [confirmReplace, setConfirmReplace] = useState(false);
 
   const busy = status.kind === 'exporting' || status.kind === 'restoring';
+
+  useEffect(() => {
+    setLastBackup(getLastBackupAt());
+  }, []);
 
   const handleExport = async () => {
     setStatus({ kind: 'exporting' });
     try {
       const backup = await createBackup();
       const result = await deliverBackupFile(JSON.stringify(backup), backupFilename());
-      setStatus(result === 'cancelled' ? { kind: 'idle' } : { kind: 'exported' });
+      if (result === 'cancelled') {
+        setStatus({ kind: 'idle' });
+      } else {
+        markBackupDone();
+        setLastBackup(getLastBackupAt());
+        setStatus({ kind: 'exported' });
+      }
     } catch {
       setStatus({ kind: 'error', message: t('backup.exportFailed') });
     }
@@ -93,7 +106,11 @@ export default function BackupSection() {
         <div className="p-4 flex items-center justify-between border-b border-gray-100">
           <div className="flex-1 min-w-0 pr-3">
             <div className="font-medium text-gray-900">{t('backup.export')}</div>
-            <div className="text-xs text-gray-500">{t('backup.exportHint')}</div>
+            <div className="text-xs text-gray-500">
+              {lastBackup
+                ? `${t('backup.lastBackup')}: ${formatDate(lastBackup, dateLocale)}`
+                : t('backup.exportHint')}
+            </div>
           </div>
           <button
             onClick={handleExport}
