@@ -109,36 +109,33 @@
 - [x] **3.4** ROI калькулятор (на экране проекта)
 - [x] **3.5** Проекты учитываются в общем Net Worth
 
-### ФАЗА 3.5: Сборка iOS и публикация в App Store 📋
+### ФАЗА 3.5: Сборка iOS и публикация в App Store 🔧
 **Цель**: Собрать нативное iOS-приложение через Capacitor и опубликовать в App Store.
 
-- [ ] **3.5.1** Подготовка проекта:
+- [x] **3.5.1** Подготовка проекта:
   - Проверить/обновить `capacitor.config.ts` (appId, appName, webDir)
   - `npm run build:ios` (Next.js static export → Capacitor sync)
   - Открыть в Xcode (`npm run open:ios`)
-- [ ] **3.5.2** Настройка Xcode:
-  - Signing Team (Apple Developer Account)
-  - Bundle Identifier
-  - App Icons (1024×1024 + все размеры)
-  - Launch Screen
-  - Version / Build number
-  - Deployment Target (минимальная iOS)
-- [ ] **3.5.3** Тестирование на устройстве:
-  - Build & Run на реальном iPhone
-  - Проверить: PWA-функции, IndexedDB, Status Bar, клавиатура
-  - Исправить iOS-специфичные баги
-- [ ] **3.5.4** Подготовка к App Store:
-  - Apple Developer Program ($99/год) — если ещё нет
-  - App Store Connect: создать приложение
-  - Скриншоты (6.7" + 6.1" минимум)
-  - Описание, ключевые слова, категория (Finance)
-  - Privacy Policy URL
-  - App Review Information
+- [x] **3.5.2** Настройка Xcode:
+  - Signing Team: Pavel Pavlov (Personal Team)
+  - Bundle Identifier: `com.milliondollardream.app`
+  - App Icons: кастомная иконка 1024×1024 (фиолетовый градиент, графики)
+  - iOS SDK 26.4 установлен
+- [x] **3.5.3** Тестирование:
+  - ✅ Симулятор iPhone 17 Pro — работает
+  - ✅ Реальный iPhone — работает (через Personal Team signing)
+- [x] **3.5.4** Подготовка к App Store:
+  - ✅ Privacy Policy: `/privacy` страница создана
+  - ✅ Описание EN + RU, ключевые слова, промо-текст — см. `APPSTORE.md`
+  - ⏳ Apple Developer Program ($99/год) — проблема с ID verification (российские права на немецком Apple ID). Нужно: обратиться в Apple Developer Support для ручной верификации
+  - [ ] Скриншоты (6.7" + 6.1" минимум)
 - [ ] **3.5.5** Публикация:
-  - Archive в Xcode → Upload to App Store Connect
-  - TestFlight (бета-тестирование)
-  - Submit for Review
-  - Релиз
+  - [ ] Переключить Xcode signing на платный Developer Team
+  - [ ] Archive в Xcode → Upload to App Store Connect
+  - [ ] Создать приложение в App Store Connect + заполнить метаданные из `APPSTORE.md`
+  - [ ] TestFlight (бета-тестирование)
+  - [ ] Submit for Review
+  - [ ] Релиз
 
 ### ФАЗА 4: Бэкенд и синхронизация
 **Цель**: Данные не теряются, доступны с любого устройства.
