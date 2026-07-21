@@ -100,12 +100,15 @@ export default function ProjectDetailContent({ projectId }: { projectId: number 
             <div className="text-lg font-bold text-gray-900">{formatMoney(totalInvested, project.currency)}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-400">
-              {isBuilding ? t('projects.frozen') : t('projects.marketValue')}
-            </div>
+            <div className="text-xs text-gray-400">{t('projects.marketValue')}</div>
             <div className="text-lg font-bold text-gray-900">
-              {formatMoney(currentValue, project.currency)}
+              {marketValue > 0 ? formatMoney(marketValue, project.currency) : '—'}
             </div>
+            {isBuilding && marketValue > totalInvested && (
+              <div className="text-xs text-gray-400 mt-0.5">
+                {t('projects.leftToPay')}: {formatMoney(marketValue - totalInvested, project.currency)}
+              </div>
+            )}
           </div>
           <div>
             <div className="text-xs text-gray-400">{t('projects.income')}</div>
@@ -115,6 +118,13 @@ export default function ProjectDetailContent({ projectId }: { projectId: number 
             <div className="text-xs text-gray-400">{t('projects.expenses')}</div>
             <div className="text-lg font-bold text-red-500">{formatMoney(operatingExpenses, project.currency)}</div>
           </div>
+        </div>
+
+        <div className="border-t border-gray-100 mt-3 pt-3 flex justify-between text-sm">
+          <span className="text-gray-400">{t('projects.inNetWorth')}</span>
+          <span className="font-semibold text-gray-900">
+            {formatMoney(currentValue, project.currency)}
+          </span>
         </div>
 
         {!isBuilding && (

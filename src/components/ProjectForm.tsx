@@ -17,6 +17,7 @@ interface ProjectFormProps {
     name: string;
     description: string;
     stage: ProjectStage;
+    operatingSince: Date | null;
     currency: string;
   }) => void;
   onCancel: () => void;
@@ -37,6 +38,10 @@ export default function ProjectForm({ project, onSave, onCancel }: ProjectFormPr
       name: name.trim(),
       description: description.trim(),
       stage,
+      // Дату перехода ставим в момент ручного переключения стадии.
+      // Уже проставленную не трогаем — иначе правка названия сдвигала бы историю.
+      operatingSince:
+        stage === 'operating' ? (project?.operatingSince ?? new Date()) : null,
       currency,
     });
   };

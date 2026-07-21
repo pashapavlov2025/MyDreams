@@ -220,6 +220,8 @@ const en: Record<TranslationKey, string> = {
   'charts.totalAssets': 'Assets',
   'update.accountActions': 'Account actions',
   'update.deleteWarning': 'The account and its full balance history will be permanently deleted.',
+  'projects.leftToPay': 'Left to pay',
+  'projects.inNetWorth': 'Counted in Net Worth',
 };
 
 export default en;

@@ -171,6 +171,7 @@ export function parseBackup(text: string): Backup {
   const projects = (requireArray(d.projects, 'projects') as InvestmentProject[]).map((p) => ({
     ...p,
     createdAt: toDate(p.createdAt),
+    operatingSince: p.operatingSince ? toDate(p.operatingSince) : null,
   }));
   const projectTransactions = (
     requireArray(d.projectTransactions, 'projectTransactions') as ProjectTransaction[]

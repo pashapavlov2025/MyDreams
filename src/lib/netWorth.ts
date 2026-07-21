@@ -29,9 +29,12 @@ const dayKey = (d: Date | string) => new Date(d).toISOString().slice(0, 10);
  * Стоимость проекта на дату.
  *
  * Стройка — по накопленным вложениям на этот момент: актив ещё не твой.
- * Эксплуатация — по последней оценке не позже этой даты; пока оценок нет,
- * тоже по вложенному. Первая оценка и служит точкой перехода, отдельного
- * поля «дата сдачи» не требуется.
+ * Эксплуатация — по последней оценке не позже этой даты.
+ *
+ * Момент перехода берётся из `operatingSince`, который выставляется вручную
+ * вместе со сменой стадии. Выводить его из данных (например, из даты первой
+ * оценки) нельзя: оценку имеет смысл вести и на стройке — это сумма, которую
+ * ещё предстоит внести, — и она не означает, что объект сдан.
  */
 export function projectValueAt(
   project: InvestmentProject,
@@ -45,11 +48,15 @@ export function projectValueAt(
 
   if (project.stage === 'building') return invested;
 
+  // Проект в эксплуатации, но на эту дату ещё строился
+  if (project.operatingSince && at < dayKey(project.operatingSince)) return invested;
+
   const valuation = valuations
     .filter((v) => dayKey(v.date) <= at)
     .sort((a, b) => dayKey(a.date).localeCompare(dayKey(b.date)))
     .pop();
 
+  // Оценки на эту дату ещё нет — честнее показать вложенное, чем ноль
   return valuation ? valuation.value : invested;
 }
 

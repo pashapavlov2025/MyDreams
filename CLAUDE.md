@@ -89,7 +89,7 @@ settings:             ++id, profileId
 - **Profile**: `{name, icon, isDemo, createdAt}`
 - **Account**: `{profileId, name, type, currency, icon, bankGroup?, sortOrder, isArchived}`
 - **BalanceSnapshot**: `{accountId, date, amount}`
-- **InvestmentProject**: `{profileId, name, description, stage, currency, currentMarketValue}`
+- **InvestmentProject**: `{profileId, name, description, stage, operatingSince, currency, currentMarketValue}`
 - **ProjectTransaction**: `{projectId, type, amount, date, category, description}`
 - **ProjectValuation**: `{projectId, date, value}` — оценка на дату, как снапшот у счёта
 - **Dream**: `{profileId, targetAmount, currency}`
@@ -199,8 +199,23 @@ ROI = P&L / totalInvested
 
 ### Точка перехода между стадиями
 
-Отдельного поля «дата сдачи» нет: в `projectValueAt()` переходом служит первая
-внесённая оценка. До неё проект считается по вложенному, после — по оценке.
+Поле `operatingSince` на проекте — дата перевода в эксплуатацию. Ставится
+вручную, вместе со сменой стадии в форме; уже проставленная не сдвигается при
+последующих правках.
+
+**Выводить переход из данных нельзя.** Была попытка считать переходом первую
+внесённую оценку — неверно: оценку имеет смысл вести и на стройке. Это сумма,
+которую ещё предстоит внести, и она не означает, что объект сдан.
+
+`projectValueAt()` до `operatingSince` считает по вложенному, после — по
+последней оценке не позже запрошенной даты. У проектов без этой даты (данные
+до появления поля) поведение прежнее.
+
+### Оценка видна на любой стадии
+
+На карточке проекта рыночная оценка показывается всегда, а на стройке рядом с
+ней — «Осталось внести». Отдельной строкой выведено, какое число реально уходит
+в капитал на первый экран, чтобы не гадать.
 
 ## i18n
 

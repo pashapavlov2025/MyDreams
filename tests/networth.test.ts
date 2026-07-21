@@ -8,8 +8,9 @@ const acc = (id: number, type: Account['type'], currency = 'USD'): Account => ({
 });
 const snap = (accountId: number, date: string, amount: number): BalanceSnapshot =>
   ({ accountId, date: new Date(date), amount });
-const proj = (stage: InvestmentProject['stage']): InvestmentProject => ({
+const proj = (stage: InvestmentProject['stage'], operatingSince?: string): InvestmentProject => ({
   id: 1, profileId: 1, name: 'Villa', description: '', stage,
+  operatingSince: operatingSince ? new Date(operatingSince) : null,
   currency: 'USD', currentMarketValue: 0, createdAt: new Date('2026-01-01'),
 });
 const tranche = (date: string, amount: number): ProjectTransaction =>
@@ -35,6 +36,21 @@ assert.strictEqual(
   projectValueAt(proj('operating'), txs, [val('2026-07-01', 209500), val('2026-10-01', 250000)], '2026-09-15'),
   209500, 'берётся последняя оценка НЕ позже даты, будущая игнорируется');
 console.log('✓ стоимость проекта на дату');
+
+// --- переход между стадиями только по operatingSince -----------------------
+{
+  const vals = [val('2026-03-01', 209500)];
+  // оценка внесена в марте, но объект сдан только в июле
+  const p = proj('operating', '2026-07-01');
+  assert.strictEqual(projectValueAt(p, txs, vals, '2026-04-01'), 1492,
+    'до operatingSince считаем по вложенному, даже если оценка уже внесена');
+  assert.strictEqual(projectValueAt(p, txs, vals, '2026-07-01'), 209500,
+    'с operatingSince переходим на оценку');
+  // без operatingSince (данные до появления поля) поведение прежнее
+  assert.strictEqual(projectValueAt(proj('operating'), txs, vals, '2026-04-01'), 209500,
+    'старые проекты без даты перехода работают как раньше');
+}
+console.log('✓ переход по operatingSince, а не по первой оценке');
 
 // --- ряд капитала ----------------------------------------------------------
 const accounts = [acc(1, 'bank'), acc(2, 'debt')];
@@ -68,16 +84,17 @@ assert.strictEqual(series[2].accountsValue, 110000 - 40000, 'долг вычит
 assert.strictEqual(series[2].netWorth, 70000 + 58660);
 console.log('✓ долг вычитается, балансы переносятся вперёд');
 
-// --- эксплуатация: скачок в день первой оценки -----------------------------
+// --- эксплуатация: скачок в дату перехода ----------------------------------
 series = buildNetWorthSeries({
-  accounts, snapshots, projects: [proj('operating')], transactions: txs,
-  valuations: [val('2026-07-01', 209500)], baseCurrency: 'USD',
+  accounts, snapshots, projects: [proj('operating', '2026-07-01')], transactions: txs,
+  valuations: [val('2026-06-05', 209500)], baseCurrency: 'USD',
 });
 const jun9 = series.find(p => p.date === '2026-06-09')!;
 const jul1 = series.find(p => p.date === '2026-07-01')!;
-assert.strictEqual(jun9.projectsValue, 58660, 'до оценки — по вложенному');
-assert.strictEqual(jul1.projectsValue, 209500, 'с даты оценки — по ней');
-console.log('✓ переход на рыночную оценку происходит в дату первой оценки');
+assert.strictEqual(jun9.projectsValue, 58660,
+  'оценка от 5 июня не переводит проект в эксплуатацию раньше срока');
+assert.strictEqual(jul1.projectsValue, 209500, 'скачок ровно в operatingSince');
+console.log('✓ скачок происходит в дату перехода, а не в дату оценки');
 
 // --- вырожденные случаи ----------------------------------------------------
 assert.deepStrictEqual(

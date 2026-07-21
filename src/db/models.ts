@@ -44,6 +44,13 @@ export interface InvestmentProject {
   name: string;
   description: string;
   stage: ProjectStage;
+  /**
+   * Когда проект переведён в эксплуатацию. Ставится вручную вместе со сменой
+   * стадии. Нужна именно дата, а не только текущая стадия: без неё
+   * исторический график не знает, с какого момента считать проект по оценке,
+   * и переход пришлось бы выводить из данных — то есть угадывать.
+   */
+  operatingSince?: Date | null;
   currency: string;
   currentMarketValue: number;
   createdAt: Date;

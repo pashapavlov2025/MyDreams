@@ -218,6 +218,8 @@ const ru = {
   'charts.totalAssets': 'Активы',
   'update.accountActions': 'Действия со счётом',
   'update.deleteWarning': 'Счёт и вся его история балансов будут удалены безвозвратно.',
+  'projects.leftToPay': 'Осталось внести',
+  'projects.inNetWorth': 'Учитывается в капитале',
 } as const;
 
 export type TranslationKey = keyof typeof ru;
