@@ -148,8 +148,14 @@ export default function DashboardContent() {
         />
       )}
 
-      <div className="px-4 py-5 text-center">
-        <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">{t('dashboard.netWorth')}</div>
+      <button
+        onClick={() => router.push('/portfolio')}
+        className="w-full px-4 py-5 text-center active:bg-gray-100 transition-colors"
+      >
+        <div className="text-xs text-gray-400 uppercase tracking-wide mb-1 flex items-center justify-center gap-1">
+          {t('dashboard.netWorth')}
+          <span className="text-gray-300">&#8250;</span>
+        </div>
         <div className="text-3xl font-bold text-gray-900">
           {formatMoney(netWorth, baseCurrency)}
         </div>
@@ -158,7 +164,7 @@ export default function DashboardContent() {
             {delta >= 0 ? '+' : ''}{formatMoney(delta, baseCurrency)} {t('dashboard.sinceLastUpdate')}
           </div>
         )}
-      </div>
+      </button>
 
       <BackupReminder hasData={accounts.length > 0 || projectsWithPnL.length > 0} />
 
