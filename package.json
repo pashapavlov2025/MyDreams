@@ -10,7 +10,7 @@
     "lint": "next lint",
     "build:ios": "next build && npx cap sync ios",
     "open:ios": "npx cap open ios",
-    "test": "tsx tests/backup.test.ts && tsx tests/reminder.test.ts && tsx tests/projects.test.ts"
+    "test": "tsx tests/backup.test.ts && tsx tests/reminder.test.ts && tsx tests/projects.test.ts && tsx tests/networth.test.ts"
   },
   "repository": {
     "type": "git",

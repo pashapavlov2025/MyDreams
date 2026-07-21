@@ -3,9 +3,8 @@
 import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/database';
-import { convertToBase } from '@/lib/currency';
 import { formatMoney } from '@/lib/format';
-import type { Account } from '@/db/models';
+import { buildNetWorthSeries } from '@/lib/netWorth';
 import { useTranslation, getDateLocale } from '@/i18n';
 import { useProfile } from '@/hooks/useProfile';
 import {
@@ -34,53 +33,38 @@ export default function NetWorthChart({ baseCurrency }: Props) {
     if (ids.length === 0) return [];
     return db.snapshots.where('accountId').anyOf(ids).toArray();
   }, [profileId], []);
+
+  const projects = useLiveQuery(
+    () => db.projects.where('profileId').equals(profileId).toArray(),
+    [profileId],
+    []
+  );
+  const projectData = useLiveQuery(async () => {
+    const ids = (await db.projects.where('profileId').equals(profileId).toArray()).map((p) => p.id!);
+    if (ids.length === 0) return { transactions: [], valuations: [] };
+    return {
+      transactions: await db.projectTransactions.where('projectId').anyOf(ids).toArray(),
+      valuations: await db.projectValuations.where('projectId').anyOf(ids).toArray(),
+    };
+  }, [profileId], { transactions: [], valuations: [] });
+
   const { t, locale } = useTranslation();
   const dateLocale = getDateLocale(locale);
 
   const chartData = useMemo(() => {
-    if (allSnapshots.length === 0 || accounts.length === 0) return [];
-
-    const accountMap = new Map<number, Account>();
-    for (const a of accounts) {
-      if (a.id) accountMap.set(a.id, a);
-    }
-
-    const dateMap = new Map<string, Map<number, number>>();
-    for (const snap of allSnapshots) {
-      const dateKey = new Date(snap.date).toISOString().slice(0, 10);
-      if (!dateMap.has(dateKey)) dateMap.set(dateKey, new Map());
-      dateMap.get(dateKey)!.set(snap.accountId, snap.amount);
-    }
-
-    const sortedDates = Array.from(dateMap.keys()).sort();
-    const latestBalances = new Map<number, number>();
-    const result: { date: string; label: string; netWorth: number }[] = [];
-
-    for (let di = 0; di < sortedDates.length; di++) {
-      const dateKey = sortedDates[di];
-      const daySnaps = dateMap.get(dateKey)!;
-      daySnaps.forEach((amount, accId) => {
-        latestBalances.set(accId, amount);
-      });
-
-      let netWorth = 0;
-      latestBalances.forEach((balance, accId) => {
-        const acc = accountMap.get(accId);
-        if (!acc) return;
-        const converted = convertToBase(balance, acc.currency, baseCurrency);
-        netWorth += acc.type === 'debt' ? -Math.abs(converted) : converted;
-      });
-
-      const d = new Date(dateKey);
-      result.push({
-        date: dateKey,
-        label: d.toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' }),
-        netWorth: Math.round(netWorth),
-      });
-    }
-
-    return result;
-  }, [allSnapshots, accounts, baseCurrency, dateLocale]);
+    return buildNetWorthSeries({
+      accounts,
+      snapshots: allSnapshots,
+      projects,
+      transactions: projectData.transactions,
+      valuations: projectData.valuations,
+      baseCurrency,
+    }).map((p) => ({
+      ...p,
+      netWorth: Math.round(p.netWorth),
+      label: new Date(p.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' }),
+    }));
+  }, [allSnapshots, accounts, projects, projectData, baseCurrency, dateLocale]);
 
   if (chartData.length < 2) return null;
 

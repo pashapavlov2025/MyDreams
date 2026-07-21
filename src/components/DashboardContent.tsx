@@ -12,6 +12,7 @@ import { useProjectsWithPnL } from '@/hooks/useProjects';
 import { useDream } from '@/hooks/useDream';
 import { useSettings } from '@/hooks/useCurrency';
 import { convertToBase } from '@/lib/currency';
+import { buildNetWorthSeries } from '@/lib/netWorth';
 import { formatMoney } from '@/lib/format';
 import { ACCOUNT_TYPE_KEYS, type AccountType } from '@/db/models';
 import { db } from '@/db/database';
@@ -67,43 +68,29 @@ export default function DashboardContent() {
     return accountsTotal + projectsValue;
   }, [accounts, baseCurrency, projectsValue]);
 
-  const delta = useMemo(() => {
-    if (allSnapshots.length === 0 || allAccounts.length === 0) return null;
-
-    const accountMap = new Map(allAccounts.filter((a) => a.id).map((a) => [a.id!, a]));
-
-    const dateMap = new Map<string, Map<number, number>>();
-    for (const snap of allSnapshots) {
-      const dateKey = new Date(snap.date).toISOString().slice(0, 10);
-      if (!dateMap.has(dateKey)) dateMap.set(dateKey, new Map());
-      dateMap.get(dateKey)!.set(snap.accountId, snap.amount);
-    }
-
-    const sortedDates = Array.from(dateMap.keys()).sort();
-    if (sortedDates.length < 2) return null;
-
-    const calcNetWorth = (upToDateIndex: number) => {
-      const balances = new Map<number, number>();
-      for (let i = 0; i <= upToDateIndex; i++) {
-        const daySnaps = dateMap.get(sortedDates[i])!;
-        daySnaps.forEach((amount, accId) => {
-          balances.set(accId, amount);
-        });
-      }
-      let nw = 0;
-      balances.forEach((balance, accId) => {
-        const acc = accountMap.get(accId);
-        if (!acc) return;
-        const converted = convertToBase(balance, acc.currency, baseCurrency);
-        nw += acc.type === 'debt' ? -Math.abs(converted) : converted;
-      });
-      return nw;
+  const projectData = useLiveQuery(async () => {
+    const ids = (await db.projects.where('profileId').equals(profileId).toArray()).map((p) => p.id!);
+    if (ids.length === 0) return { transactions: [], valuations: [] };
+    return {
+      transactions: await db.projectTransactions.where('projectId').anyOf(ids).toArray(),
+      valuations: await db.projectValuations.where('projectId').anyOf(ids).toArray(),
     };
+  }, [profileId], { transactions: [], valuations: [] });
 
-    const currentNW = calcNetWorth(sortedDates.length - 1);
-    const prevNW = calcNetWorth(sortedDates.length - 2);
-    return currentNW - prevNW;
-  }, [allSnapshots, allAccounts, baseCurrency]);
+  // Тот же ряд, что и под графиком: дельта обязана считаться по тем же
+  // правилам, иначе число над графиком не совпадёт с его последним шагом
+  const delta = useMemo(() => {
+    const series = buildNetWorthSeries({
+      accounts: allAccounts,
+      snapshots: allSnapshots,
+      projects: projectsWithPnL,
+      transactions: projectData.transactions,
+      valuations: projectData.valuations,
+      baseCurrency,
+    });
+    if (series.length < 2) return null;
+    return series[series.length - 1].netWorth - series[series.length - 2].netWorth;
+  }, [allSnapshots, allAccounts, projectsWithPnL, projectData, baseCurrency]);
 
   const groups = useMemo((): TypeGroup[] => {
     const typeMap = new Map<AccountType, AccountWithBalance[]>();
