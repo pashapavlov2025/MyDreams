@@ -155,8 +155,8 @@ export default function DashboardContent() {
       {dream && dream.targetAmount > 0 && (
         <DreamProgress
           currentNetWorth={netWorth}
-          targetAmount={dream.targetAmount}
-          currency={dream.currency || baseCurrency}
+          targetAmount={convertToBase(dream.targetAmount, dream.currency || baseCurrency, baseCurrency)}
+          currency={baseCurrency}
         />
       )}
 

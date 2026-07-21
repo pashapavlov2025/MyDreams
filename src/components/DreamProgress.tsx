@@ -3,6 +3,8 @@
 import { formatMoney } from '@/lib/format';
 import { useTranslation } from '@/i18n';
 
+// currentNetWorth и targetAmount должны быть в одной валюте (currency) —
+// конвертация делается на стороне вызывающего
 interface DreamProgressProps {
   currentNetWorth: number;
   targetAmount: number;
