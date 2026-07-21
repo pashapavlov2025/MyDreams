@@ -1,0 +1,11 @@
+{
+  "name": "mydreams-push",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Push-напоминания для MyDreams. Отдельный деплой: основное приложение — статический экспорт, API-роутов в нём быть не может.",
+  "dependencies": {
+    "@upstash/redis": "^1.35.0",
+    "web-push": "^3.6.7"
+  }
+}

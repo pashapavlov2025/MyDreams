@@ -9,6 +9,7 @@ import { setAppPin, removeAppPin, hasPin } from '@/components/PinLock';
 import { useTranslation, getDateLocale, type Locale } from '@/i18n';
 import { useProfile } from '@/hooks/useProfile';
 import BackupSection from '@/components/BackupSection';
+import PushSection from '@/components/PushSection';
 
 export default function SettingsContent() {
   const { dream, updateDream } = useDream();
@@ -277,6 +278,9 @@ export default function SettingsContent() {
             )}
           </div>
         </section>
+
+        {/* Push reminders */}
+        <PushSection />
 
         {/* Backup / restore */}
         <BackupSection />

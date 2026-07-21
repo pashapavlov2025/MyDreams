@@ -37,3 +37,6 @@ ios/App/App/public
 ios/App/App/capacitor.config.json
 ios/App/Pods
 .env*
+
+# push server
+server/node_modules

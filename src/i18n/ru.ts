@@ -172,6 +172,24 @@ const ru = {
   'backup.restoreFailed': 'Не удалось восстановить данные',
   'backup.invalidFile': 'Это не похоже на файл резервной копии MyDreams',
   'backup.pinNote': 'PIN-код и язык не входят в резервную копию — их нужно настроить заново.',
+
+  // Push notifications
+  'push.title': 'Напоминания',
+  'push.reminder': 'Напоминать обновить балансы',
+  'push.off': 'Выключено',
+  'push.weekly': 'Раз в неделю',
+  'push.monthly': 'Раз в месяц',
+  'push.weeklyHint': 'По понедельникам',
+  'push.monthlyHint': '1-го числа каждого месяца',
+  'push.enabling': 'Включаю...',
+  'push.test': 'Проверить',
+  'push.testSent': 'Уведомление отправлено',
+  'push.errorUnsupported': 'Браузер не поддерживает уведомления',
+  'push.errorNotConfigured': 'Сервер уведомлений не настроен',
+  'push.errorDenied': 'Разрешение не выдано. Включите уведомления для MyDreams в настройках iOS',
+  'push.errorInstall': 'Сначала добавьте приложение на домашний экран: Поделиться → «На экран Домой»',
+  'push.errorFailed': 'Не удалось включить уведомления',
+  'push.note': 'На сервере хранится только адрес для доставки уведомлений и выбранная периодичность. Балансы остаются на устройстве.',
 } as const;
 
 export type TranslationKey = keyof typeof ru;

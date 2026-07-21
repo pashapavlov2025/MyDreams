@@ -10,6 +10,20 @@ export const metadata: Metadata = {
   title: 'MyDreams',
   description: 'Personal finance tracker',
   manifest: '/manifest.json',
+  // apple-touch-icon нужен явно: iOS не читает icons из manifest при
+  // добавлении на домашний экран
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/icons/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'MyDreams',
+    statusBarStyle: 'default',
+  },
 };
 
 export const viewport: Viewport = {

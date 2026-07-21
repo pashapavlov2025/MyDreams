@@ -174,6 +174,24 @@ const en: Record<TranslationKey, string> = {
   'backup.restoreFailed': 'Could not restore the data',
   'backup.invalidFile': 'This does not look like a MyDreams backup file',
   'backup.pinNote': 'PIN code and language are not part of the backup — set them up again after restoring.',
+
+  // Push notifications
+  'push.title': 'Reminders',
+  'push.reminder': 'Remind me to update balances',
+  'push.off': 'Off',
+  'push.weekly': 'Weekly',
+  'push.monthly': 'Monthly',
+  'push.weeklyHint': 'On Mondays',
+  'push.monthlyHint': 'On the 1st of each month',
+  'push.enabling': 'Enabling...',
+  'push.test': 'Test',
+  'push.testSent': 'Notification sent',
+  'push.errorUnsupported': 'This browser does not support notifications',
+  'push.errorNotConfigured': 'Notification server is not configured',
+  'push.errorDenied': 'Permission denied. Enable notifications for MyDreams in iOS settings',
+  'push.errorInstall': 'Add the app to your Home Screen first: Share → Add to Home Screen',
+  'push.errorFailed': 'Could not enable notifications',
+  'push.note': 'The server stores only a delivery address and your chosen schedule. Balances stay on your device.',
 };
 
 export default en;
