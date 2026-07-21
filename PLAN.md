@@ -11,7 +11,7 @@
 - **UI**: Tailwind CSS, мобильный дизайн (iOS-like)
 - **Data**: IndexedDB (Dexie.js v4) — клиентское хранилище
 - **Charts**: Recharts (area charts, pie charts)
-- **Currency rates**: frankfurter.app (фиат) + CoinGecko (крипто)
+- **Currency rates**: open.er-api.com (фиат) + CoinGecko (крипто)
 - **Hosting**: Vercel
 - **Security**: PIN-код (SHA-256, sessionStorage)
 

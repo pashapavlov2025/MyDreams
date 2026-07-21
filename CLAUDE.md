@@ -23,7 +23,7 @@ npm run open:ios     # открыть Xcode
 | UI | Tailwind CSS 3, Recharts |
 | Data | IndexedDB через Dexie.js v4 (offline-first) |
 | i18n | Свой контекст, RU + EN |
-| Курсы валют | frankfurter.app (фиат) + CoinGecko (крипто) |
+| Курсы валют | open.er-api.com (фиат) + CoinGecko (крипто) |
 | Мобилка | Capacitor 8 (iOS), PWA |
 | Безопасность | PIN-код (SHA-256 + sessionStorage) |
 
@@ -171,7 +171,25 @@ npm run open:ios       # открыть в Xcode
 - `convertToBase(amount, from, to)` — конвертация через USD как pivot
 - `formatMoney(amount, currency)` — `$15,000` / `$1.50M`
 - `formatMoneyShort(amount, currency)` — `$15K` / `$1.5M`
-- Fallback курсы захардкожены, live обновляются из API
+- Fallback курсы захардкожены, live обновляются из API (stale > 4ч)
+
+### Закрытый список валют
+
+`FALLBACK_RATES_TO_USD` — источник правды: его ключи формируют выпадающие списки
+через `getAvailableCurrencies()`. Живые курсы фильтруются по `LIVE_FIAT`, потому
+что `open.er-api.com` отдаёт 160+ валют и без фильтра они раздули бы UI.
+
+Добавление валюты: ключ в `FALLBACK_RATES_TO_USD` + символ в `getCurrencySymbol()`
++ код в `LIVE_FIAT` (если фиат).
+
+Раньше источником был `frankfurter.app`, но он отдаёт курсы ЕЦБ — там нет ни
+рубля (не публикуется с марта 2022), ни тенге, ни дирхама. Код их запрашивал,
+молча не получал и оставлял захардкоженные значения.
+
+`convertToBase` для валюты без курса считает 1:1 к доллару и пишет в консоль —
+молча это искажало бы Net Worth в сотни раз. Единственный путь попадания такой
+валюты в базу — импорт, поэтому `parseBackup` отклоняет файл с неизвестной
+валютой (`isSupportedCurrency`).
 
 ## Бэкап и перенос между устройствами
 
