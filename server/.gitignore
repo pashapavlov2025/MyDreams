@@ -1,2 +1,7 @@
 .vercel
 .env*
+
+# документация вендора, которую доставляет интеграция Upstash
+.agents/
+.claude/
+skills-lock.json
