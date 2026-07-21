@@ -7,6 +7,12 @@ import { useTranslation, type TranslationKey } from '@/i18n';
 
 interface ProjectFormProps {
   project?: InvestmentProject;
+  /**
+   * Актуальная оценка из истории. Поле currentMarketValue на самом проекте —
+   * лишь зеркало последней записи и может отставать, поэтому подставлять
+   * его в форму нельзя: сохранение затёрло бы свежую оценку старой.
+   */
+  currentValuation?: number;
   onSave: (data: {
     name: string;
     description: string;
@@ -17,13 +23,15 @@ interface ProjectFormProps {
   onCancel: () => void;
 }
 
-export default function ProjectForm({ project, onSave, onCancel }: ProjectFormProps) {
+export default function ProjectForm({ project, currentValuation, onSave, onCancel }: ProjectFormProps) {
   const { t } = useTranslation();
   const [name, setName] = useState(project?.name ?? '');
   const [description, setDescription] = useState(project?.description ?? '');
   const [stage, setStage] = useState<ProjectStage>(project?.stage ?? 'building');
   const [currency, setCurrency] = useState(project?.currency ?? 'USD');
-  const [marketValue, setMarketValue] = useState(project?.currentMarketValue?.toString() ?? '');
+  const [marketValue, setMarketValue] = useState(
+    (currentValuation ?? project?.currentMarketValue)?.toString() ?? ''
+  );
 
   const currencies = getAvailableCurrencies();
 

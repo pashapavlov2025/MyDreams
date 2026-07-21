@@ -92,6 +92,16 @@ async function main() {
   assert.strictEqual(afterChange[0].amount, 999);
   console.log('✓ bulkUpdate: без изменений записи не растут, за день одна');
 
+  // --- форма не должна затирать свежую оценку ------------------------------
+  await setProjectValuation(pid, 300000, new Date('2026-11-01'));
+  const latest = (await getLatestValuation(pid))!.value;
+  const stale = (await db.projects.get(pid))!.currentMarketValue;
+  assert.strictEqual(latest, 300000);
+  assert.notStrictEqual(stale, latest, 'зеркало на проекте отстаёт — это ожидаемо');
+  // форма обязана брать latest, иначе сохранение вернёт старое значение
+  assert.strictEqual(latest, 300000, 'источник правды — история оценок');
+  console.log('✓ источник правды для оценки — история, не поле проекта');
+
   console.log('\nALL PASS');
 }
 main().catch(e => { console.error('FAIL:', e.message); process.exit(1); });

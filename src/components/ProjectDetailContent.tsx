@@ -291,6 +291,7 @@ export default function ProjectDetailContent({ projectId }: { projectId: number 
       {showEditForm && (
         <ProjectForm
           project={project}
+          currentValuation={marketValue}
           onSave={async (data) => {
             await updateProject(projectId, data);
             // Оценка живёт в истории; currentMarketValue оставляем как зеркало
