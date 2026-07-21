@@ -52,7 +52,7 @@ export default function ProjectsContent() {
             return (
               <button
                 key={project.id}
-                onClick={() => router.push(`/projects/${project.id}`)}
+                onClick={() => router.push(`/project?id=${project.id}`)}
                 className="w-full bg-white rounded-xl p-4 shadow-sm text-left"
               >
                 <div className="flex items-center justify-between mb-2">

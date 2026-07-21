@@ -34,15 +34,14 @@ src/
 ├── app/                     # Next.js App Router pages
 │   ├── layout.tsx           # Root: AppProvider + TabBar
 │   ├── page.tsx             # / — Dashboard
-│   ├── account/[id]/        # /account/:id — история аккаунта
-│   │   ├── page.tsx         # Server wrapper (generateStaticParams)
-│   │   └── client.tsx       # Client component
+│   ├── account/             # /account?id=N — история аккаунта
+│   │   ├── page.tsx         # Server wrapper
+│   │   └── client.tsx       # Client component (useSearchParams)
 │   ├── update/page.tsx      # /update — массовое обновление балансов
-│   ├── projects/
-│   │   ├── page.tsx         # /projects — список проектов
-│   │   └── [id]/            # /projects/:id — P&L проекта
-│   │       ├── page.tsx     # Server wrapper
-│   │       └── client.tsx   # Client component
+│   ├── projects/page.tsx    # /projects — список проектов
+│   ├── project/             # /project?id=N — P&L проекта
+│   │   ├── page.tsx         # Server wrapper
+│   │   └── client.tsx       # Client component (useSearchParams)
 │   └── settings/page.tsx    # /settings
 ├── components/              # React-компоненты
 ├── hooks/                   # Бизнес-логика (CRUD, P&L)
@@ -51,9 +50,23 @@ src/
 └── lib/                     # Утилиты (валюта, форматирование, бэкап)
 ```
 
-### Динамические роуты и Static Export
+### Почему id в query, а не в пути
 
-Next.js с `output: 'export'` не поддерживает динамические роуты без `generateStaticParams`. Решение: `page.tsx` — server component с `generateStaticParams([{id:'0'}])`, `client.tsx` — `'use client'` с `useParams()`.
+`output: 'export'` генерирует статические файлы, поэтому динамический роут
+существует только для тех id, которые вернул `generateStaticParams`. Раньше он
+возвращал `[{ id: '0' }]` — собиралась ровно одна страница `/account/0`, а Dexie
+нумерует с единицы, так что экран истории в проде отдавал 404 для любого счёта.
+На дев-сервере баг не воспроизводился: там роуты резолвятся на лету.
+
+Сейчас id передаётся query-параметром: `/account?id=5`, `/project?id=3`. Страница
+одна, статическая, работает и на Vercel, и в Capacitor офлайн. Детальная страница
+проекта называется `/project` (единственное число), чтобы не конфликтовать со
+списком `/projects`.
+
+`useSearchParams()` требует обёртки в `<Suspense>` — при пререндере параметров нет,
+они появляются только на клиенте. Без обёртки сборка падает.
+
+**Не возвращайся к `[id]`-роутам** без отказа от `output: 'export'`.
 
 ## Database (Dexie.js)
 

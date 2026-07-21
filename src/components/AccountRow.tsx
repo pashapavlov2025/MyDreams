@@ -23,7 +23,7 @@ export default function AccountRow({ account, baseCurrency, indented }: AccountR
 
   return (
     <button
-      onClick={() => account.id && router.push(`/account/${account.id}`)}
+      onClick={() => account.id && router.push(`/account?id=${account.id}`)}
       className={`flex items-center py-3 bg-white border-b border-gray-100 last:border-b-0 w-full text-left active:bg-gray-50 transition-colors ${
         indented ? 'pl-7 pr-4' : 'px-4'
       }`}

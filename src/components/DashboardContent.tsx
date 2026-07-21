@@ -230,7 +230,7 @@ export default function DashboardContent() {
               return (
                 <button
                   key={project.id}
-                  onClick={() => router.push(`/projects/${project.id}`)}
+                  onClick={() => router.push(`/project?id=${project.id}`)}
                   className="w-full flex items-center px-4 py-3 border-b border-gray-50 last:border-0 text-left"
                 >
                   <span className="text-xl mr-3">{project.stage === 'building' ? '🏗️' : '🏠'}</span>
