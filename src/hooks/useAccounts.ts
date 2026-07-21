@@ -42,12 +42,41 @@ export function useAccounts() {
     return db.accounts.update(id, { isArchived: true });
   }, []);
 
+  const unarchiveAccount = useCallback(async (id: number) => {
+    return db.accounts.update(id, { isArchived: false });
+  }, []);
+
   const deleteAccount = useCallback(async (id: number) => {
     await db.snapshots.where('accountId').equals(id).delete();
     await db.accounts.delete(id);
   }, []);
 
-  return { accounts: accounts ?? [], addAccount, updateAccount, archiveAccount, deleteAccount };
+  return { accounts: accounts ?? [], addAccount, updateAccount, archiveAccount, unarchiveAccount, deleteAccount };
+}
+
+/** Архивные аккаунты с последним балансом — чтобы было видно, что возвращаешь. */
+export function useArchivedAccounts() {
+  const { profileId } = useProfile();
+
+  const data = useLiveQuery(async () => {
+    const accounts = await db.accounts
+      .where('profileId').equals(profileId)
+      .filter((a) => a.isArchived)
+      .sortBy('sortOrder');
+
+    const result: AccountWithBalance[] = [];
+    for (const account of accounts) {
+      const snap = await getLatestSnapshot(account.id!);
+      result.push({
+        ...account,
+        latestBalance: snap?.amount ?? 0,
+        latestDate: snap?.date ?? null,
+      });
+    }
+    return result;
+  }, [profileId], []);
+
+  return data ?? [];
 }
 
 export function useAccountsWithBalances() {

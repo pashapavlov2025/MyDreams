@@ -200,6 +200,12 @@ const en: Record<TranslationKey, string> = {
   'backupReminder.daysAgo': 'Days since last backup',
   'backupReminder.action': 'Back up now',
   'backupReminder.later': 'Later',
+
+  // Archive
+  'archive.restore': 'Restore',
+  'archive.confirm': 'Archive',
+  'archive.hasBalance': 'This account has a balance',
+  'archive.hint': 'It will stop counting toward Net Worth. History is kept — you can restore it below.',
 };
 
 export default en;

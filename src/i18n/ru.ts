@@ -198,6 +198,12 @@ const ru = {
   'backupReminder.daysAgo': 'Дней с последнего бэкапа',
   'backupReminder.action': 'Сделать бэкап',
   'backupReminder.later': 'Позже',
+
+  // Archive
+  'archive.restore': 'Вернуть',
+  'archive.confirm': 'В архив',
+  'archive.hasBalance': 'На счёте есть остаток',
+  'archive.hint': 'Он перестанет учитываться в капитале. История сохранится, вернуть можно ниже.',
 } as const;
 
 export type TranslationKey = keyof typeof ru;

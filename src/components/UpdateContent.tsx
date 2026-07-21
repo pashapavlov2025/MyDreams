@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccountsWithBalances } from '@/hooks/useAccounts';
-import { useAccounts, useAllAccounts } from '@/hooks/useAccounts';
+import { useAccounts, useAllAccounts, useArchivedAccounts } from '@/hooks/useAccounts';
 import { useSnapshots } from '@/hooks/useSnapshots';
 import { formatMoney } from '@/lib/format';
 import { ACCOUNT_TYPE_ICONS, type AccountType, type Account } from '@/db/models';
@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n';
 
 export default function UpdateContent() {
   const accountsWithBalances = useAccountsWithBalances();
-  const { addAccount, updateAccount, archiveAccount, deleteAccount } = useAccounts();
+  const { addAccount, updateAccount, archiveAccount, unarchiveAccount, deleteAccount } = useAccounts();
   const allAccounts = useAllAccounts();
   const { bulkUpdate } = useSnapshots();
   const router = useRouter();
@@ -23,8 +23,9 @@ export default function UpdateContent() {
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [confirmArchive, setConfirmArchive] = useState<number | null>(null);
 
-  const archivedAccounts = allAccounts.filter((a) => a.isArchived);
+  const archivedAccounts = useArchivedAccounts();
 
   useEffect(() => {
     const initial: Record<number, string> = {};
@@ -183,10 +184,8 @@ export default function UpdateContent() {
                 const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '📦';
                 const original = allAccounts.find((a) => a.id === acc.id);
                 return (
-                  <div
-                    key={acc.id}
-                    className="flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0"
-                  >
+                  <div key={acc.id} className="border-b border-gray-100 last:border-b-0">
+                    <div className="flex items-center px-4 py-3">
                     <button
                       onClick={() => { if (original) setEditingAccount(original); }}
                       className="flex items-center flex-1 min-w-0 text-left"
@@ -225,7 +224,13 @@ export default function UpdateContent() {
                     ) : (
                       <div className="flex gap-1 ml-2">
                         <button
-                          onClick={() => acc.id && archiveAccount(acc.id)}
+                          onClick={() => {
+                            if (!acc.id) return;
+                            // со счёта с остатком в архив — только с подтверждением:
+                            // он пропадёт из Net Worth, а вернуть было неочевидно
+                            if (acc.latestBalance !== 0) setConfirmArchive(acc.id);
+                            else archiveAccount(acc.id);
+                          }}
                           className="px-2 py-1 text-xs text-gray-400"
                           aria-label={t('settings.archive')}
                         >
@@ -240,6 +245,37 @@ export default function UpdateContent() {
                         </button>
                       </div>
                     )}
+                    </div>
+
+                    {confirmArchive === acc.id && (
+                      <div className="px-4 pb-3 -mt-1">
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                          <div className="text-sm text-amber-900">
+                            {t('archive.hasBalance')}: {formatMoney(acc.latestBalance, acc.currency)}
+                          </div>
+                          <div className="text-xs text-amber-700 mt-0.5">
+                            {t('archive.hint')}
+                          </div>
+                          <div className="flex gap-2 mt-2.5">
+                            <button
+                              onClick={() => {
+                                if (acc.id) archiveAccount(acc.id);
+                                setConfirmArchive(null);
+                              }}
+                              className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium"
+                            >
+                              {t('archive.confirm')}
+                            </button>
+                            <button
+                              onClick={() => setConfirmArchive(null)}
+                              className="px-3 py-1.5 text-amber-700 text-xs font-medium"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -252,7 +288,7 @@ export default function UpdateContent() {
               <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
                 {t('settings.archive')} ({archivedAccounts.length})
               </div>
-              <div className="bg-white rounded-xl shadow-sm overflow-hidden opacity-60">
+              <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                 {archivedAccounts.map((acc) => (
                   <div
                     key={acc.id}
@@ -265,9 +301,18 @@ export default function UpdateContent() {
                         acc.icon || ACCOUNT_TYPE_ICONS[acc.type as AccountType] || '📦'
                       )}
                     </span>
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-500">{acc.name}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-gray-500 truncate">{acc.name}</div>
+                      <div className="text-xs text-gray-400">
+                        {formatMoney(acc.latestBalance, acc.currency)}
+                      </div>
                     </div>
+                    <button
+                      onClick={() => acc.id && unarchiveAccount(acc.id)}
+                      className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium ml-2 shrink-0"
+                    >
+                      {t('archive.restore')}
+                    </button>
                   </div>
                 ))}
               </div>
