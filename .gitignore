@@ -36,3 +36,4 @@ next-env.d.ts
 ios/App/App/public
 ios/App/App/capacitor.config.json
 ios/App/Pods
+.env*
