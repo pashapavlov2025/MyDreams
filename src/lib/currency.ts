@@ -3,16 +3,21 @@ import { db } from '@/db/database';
 // Fallback rates (used when no live rates available)
 const FALLBACK_RATES_TO_USD: Record<string, number> = {
   USD: 1,
-  EUR: 1.08,
-  RUB: 0.011,
-  IDR: 0.000063,
-  GBP: 1.27,
-  THB: 0.028,
-  AED: 0.27,
+  EUR: 1.14,
+  RUB: 0.0128,
+  KZT: 0.00213,
+  IDR: 0.000056,
+  GBP: 1.34,
+  THB: 0.0297,
+  AED: 0.2723,
   USDT: 1,
   BTC: 67000,
   ETH: 3500,
 };
+
+// Фиатные валюты, которые тянем живыми. Список закрытый: он же определяет
+// выпадающие списки через getAvailableCurrencies(), а API отдаёт 160+ валют.
+const LIVE_FIAT = ['EUR', 'GBP', 'RUB', 'KZT', 'THB', 'AED', 'IDR'] as const;
 
 // Live rates cache (loaded from IndexedDB or API)
 let liveRates: Record<string, number> | null = null;
@@ -28,14 +33,32 @@ function getRatesToUSD(): Record<string, number> {
   return FALLBACK_RATES_TO_USD;
 }
 
+const warnedCurrencies = new Set<string>();
+
+function rateToUSD(currency: string, rates: Record<string, number>): number {
+  const rate = rates[currency];
+  if (rate !== undefined) return rate;
+
+  // Курс 1 для неизвестной валюты молча искажает Net Worth в разы
+  // (1 000 000 ₸ превратились бы в $1 000 000), поэтому шумим в консоль.
+  // Единственный путь попадания такой валюты в базу — импорт, он валидируется
+  // в isSupportedCurrency (см. lib/backup.ts).
+  if (!warnedCurrencies.has(currency)) {
+    warnedCurrencies.add(currency);
+    console.warn(`[currency] Нет курса для "${currency}" — считаю 1:1 к USD, сумма будет неверной`);
+  }
+  return 1;
+}
+
 export function convertToBase(amount: number, fromCurrency: string, baseCurrency: string): number {
   if (fromCurrency === baseCurrency) return amount;
 
   const rates = getRatesToUSD();
-  const fromRate = rates[fromCurrency] ?? 1;
-  const toRate = rates[baseCurrency] ?? 1;
+  return (amount * rateToUSD(fromCurrency, rates)) / rateToUSD(baseCurrency, rates);
+}
 
-  return (amount * fromRate) / toRate;
+export function isSupportedCurrency(currency: string): boolean {
+  return currency in FALLBACK_RATES_TO_USD;
 }
 
 export function getAvailableCurrencies(): string[] {
@@ -51,6 +74,7 @@ export function getCurrencySymbol(currency: string): string {
     GBP: '\u00A3',
     THB: '\u0E3F',
     AED: '\u062F.\u0625',
+    KZT: '\u20B8',
     USDT: '\u20AE',
     BTC: '\u20BF',
     ETH: '\u039E',
@@ -63,13 +87,20 @@ export async function fetchLiveRates(): Promise<Record<string, number>> {
   const rates: Record<string, number> = { USD: 1 };
 
   try {
-    // Fiat rates from frankfurter.app (base: USD)
-    const fiatRes = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,RUB,THB,AED,IDR');
+    // Фиат: open.er-api.com (без ключа). Раньше был frankfurter.app, но он
+    // отдаёт курсы ЕЦБ — там нет ни рубля (с 2022), ни тенге, ни дирхама,
+    // и они молча оставались захардкоженными.
+    const fiatRes = await fetch('https://open.er-api.com/v6/latest/USD');
     if (fiatRes.ok) {
       const data = await fiatRes.json();
-      // frankfurter gives USD -> X, we need X -> USD
-      for (const [currency, rate] of Object.entries(data.rates as Record<string, number>)) {
-        rates[currency] = 1 / rate;
+      const apiRates = (data?.rates ?? {}) as Record<string, number>;
+      // API отдаёт USD -> X, нам нужно X -> USD. Берём только свой список:
+      // иначе 160+ валют утекут в getAvailableCurrencies() и раздуют UI.
+      for (const currency of LIVE_FIAT) {
+        const rate = apiRates[currency];
+        if (typeof rate === 'number' && rate > 0) {
+          rates[currency] = 1 / rate;
+        }
       }
     }
   } catch {

@@ -1,4 +1,5 @@
 import { db } from '@/db/database';
+import { isSupportedCurrency } from '@/lib/currency';
 import type {
   Profile,
   Account,
@@ -135,6 +136,21 @@ export function parseBackup(text: string): Backup {
     ...s,
     lastRatesUpdate: s.lastRatesUpdate ? toDate(s.lastRatesUpdate) : null,
   }));
+
+  // Импорт — единственный путь, которым в базу может попасть валюта без курса.
+  // Без этой проверки convertToBase посчитал бы её 1:1 к доллару.
+  const unknown = new Set<string>();
+  for (const c of [
+    ...accounts.map((a) => a.currency),
+    ...projects.map((p) => p.currency),
+    ...dreams.map((d) => d.currency),
+    ...settings.map((s) => s.baseCurrency),
+  ]) {
+    if (c && !isSupportedCurrency(c)) unknown.add(c);
+  }
+  if (unknown.size > 0) {
+    throw new Error(`Unsupported currencies in backup: ${Array.from(unknown).sort().join(', ')}`);
+  }
 
   return {
     format: obj.format,

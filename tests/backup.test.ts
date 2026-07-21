@@ -65,6 +65,16 @@ async function main() {
   assert.throws(() => parseBackup(JSON.stringify({ format: 'mydreams-backup', version: 1, data: {} })), /missing "profiles"/);
   console.log('✓ invalid files rejected');
 
+  // --- Валюта без курса не должна попасть в базу -----------------------------
+  const withBadCurrency = JSON.parse(json);
+  withBadCurrency.data.accounts[0].currency = 'ZWL';
+  assert.throws(() => parseBackup(JSON.stringify(withBadCurrency)), /Unsupported currencies.*ZWL/);
+  // ...а поддерживаемая проходит
+  const withKzt = JSON.parse(json);
+  withKzt.data.accounts[0].currency = 'KZT';
+  assert.strictEqual(parseBackup(JSON.stringify(withKzt)).data.accounts[0].currency, 'KZT');
+  console.log('✓ currency validation: ZWL rejected, KZT accepted');
+
   // --- MERGE ---------------------------------------------------------------
   await restoreBackup(parsed, 'merge');
   const merged = await counts();
