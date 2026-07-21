@@ -8,6 +8,7 @@ import { getAvailableCurrencies } from '@/lib/currency';
 import { setAppPin, removeAppPin, hasPin } from '@/components/PinLock';
 import { useTranslation, getDateLocale, type Locale } from '@/i18n';
 import { useProfile } from '@/hooks/useProfile';
+import BackupSection from '@/components/BackupSection';
 
 export default function SettingsContent() {
   const { dream, updateDream } = useDream();
@@ -276,6 +277,9 @@ export default function SettingsContent() {
             )}
           </div>
         </section>
+
+        {/* Backup / restore */}
+        <BackupSection />
 
         {/* Currency Rates */}
         <section>

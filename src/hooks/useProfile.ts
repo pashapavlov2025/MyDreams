@@ -6,7 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, ensureDefaultProfile, seedDemoProfile } from '@/db/database';
 import type { Profile } from '@/db/models';
 
-const PROFILE_STORAGE_KEY = 'mydreams_active_profile';
+export const PROFILE_STORAGE_KEY = 'mydreams_active_profile';
 
 interface ProfileContextType {
   profileId: number;
