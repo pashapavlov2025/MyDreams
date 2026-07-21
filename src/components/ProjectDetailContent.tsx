@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/db/database';
-import { useProjects, useProjectTransactions } from '@/hooks/useProjects';
+import { useProjects, useProjectTransactions, useProjectsWithPnL, useProjectValuations } from '@/hooks/useProjects';
 import { formatMoney, formatDate } from '@/lib/format';
 import { useTranslation, type TranslationKey } from '@/i18n';
 import { getDateLocale } from '@/i18n';
@@ -29,12 +29,17 @@ export default function ProjectDetailContent({ projectId }: { projectId: number 
   const router = useRouter();
   const { updateProject, deleteProject } = useProjects();
   const { transactions, addTransaction, deleteTransaction } = useProjectTransactions(projectId);
+  const { valuations, addValuation } = useProjectValuations(projectId);
+  const projectsWithPnL = useProjectsWithPnL();
   const [showTxForm, setShowTxForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showValuationForm, setShowValuationForm] = useState(false);
+  const [valuationInput, setValuationInput] = useState('');
 
   const project = useLiveQuery(() => db.projects.get(projectId), [projectId]);
+  const pnlData = projectsWithPnL.find((p) => p.id === projectId);
 
-  if (!project) {
+  if (!project || !pnlData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -42,21 +47,11 @@ export default function ProjectDetailContent({ projectId }: { projectId: number 
     );
   }
 
-  const totalInvested = transactions
-    .filter((tx) => tx.type === 'tranche')
-    .reduce((s, tx) => s + tx.amount, 0);
-
-  const totalExpenses = transactions
-    .filter((tx) => tx.type === 'construction_expense' || tx.type === 'operating_expense')
-    .reduce((s, tx) => s + tx.amount, 0);
-
-  const totalIncome = transactions
-    .filter((tx) => isIncome(tx.type))
-    .reduce((s, tx) => s + tx.amount, 0);
-
-  const totalSpent = totalInvested + totalExpenses;
-  const pnl = totalIncome - totalSpent;
-  const roi = totalSpent > 0 ? (pnl / totalSpent) * 100 : 0;
+  const {
+    totalInvested, operatingIncome, operatingExpenses, operatingProfit,
+    marketValue, currentValue, pnl, roi,
+  } = pnlData;
+  const isBuilding = project.stage === 'building';
 
   const handleDelete = async () => {
     if (confirm(t('projects.deleteConfirm'))) {
@@ -101,22 +96,41 @@ export default function ProjectDetailContent({ projectId }: { projectId: number 
       <div className="bg-white rounded-xl mx-4 p-4 shadow-sm mb-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <div className="text-xs text-gray-400">{t('projects.marketValue')}</div>
-            <div className="text-lg font-bold text-gray-900">{formatMoney(project.currentMarketValue, project.currency)}</div>
-          </div>
-          <div>
             <div className="text-xs text-gray-400">{t('projects.invested')}</div>
             <div className="text-lg font-bold text-gray-900">{formatMoney(totalInvested, project.currency)}</div>
           </div>
           <div>
+            <div className="text-xs text-gray-400">
+              {isBuilding ? t('projects.frozen') : t('projects.marketValue')}
+            </div>
+            <div className="text-lg font-bold text-gray-900">
+              {formatMoney(currentValue, project.currency)}
+            </div>
+          </div>
+          <div>
             <div className="text-xs text-gray-400">{t('projects.income')}</div>
-            <div className="text-lg font-bold text-green-600">{formatMoney(totalIncome, project.currency)}</div>
+            <div className="text-lg font-bold text-green-600">{formatMoney(operatingIncome, project.currency)}</div>
           </div>
           <div>
             <div className="text-xs text-gray-400">{t('projects.expenses')}</div>
-            <div className="text-lg font-bold text-red-500">{formatMoney(totalExpenses, project.currency)}</div>
+            <div className="text-lg font-bold text-red-500">{formatMoney(operatingExpenses, project.currency)}</div>
           </div>
         </div>
+
+        {!isBuilding && (
+          <div className="border-t border-gray-100 mt-3 pt-3 flex justify-between text-sm">
+            <span className="text-gray-400">{t('projects.operatingProfit')}</span>
+            <span className={`font-semibold ${operatingProfit >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {operatingProfit >= 0 ? '+' : ''}{formatMoney(operatingProfit, project.currency)}
+            </span>
+          </div>
+        )}
+
+        {isBuilding && (
+          <div className="mt-3 text-xs text-gray-400 leading-relaxed">
+            {t('projects.buildingNote')}
+          </div>
+        )}
         <div className="border-t border-gray-100 mt-3 pt-3 flex justify-between items-center">
           <div>
             <div className="text-xs text-gray-400">{t('projects.pnl')}</div>
@@ -130,6 +144,83 @@ export default function ProjectDetailContent({ projectId }: { projectId: number 
               {roi >= 0 ? '+' : ''}{roi.toFixed(1)}%
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Valuations */}
+      <div className="mx-4 mb-4">
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            {t('projects.valuationHistory')}
+          </span>
+          <button
+            onClick={() => { setValuationInput(marketValue ? String(marketValue) : ''); setShowValuationForm(true); }}
+            className="text-indigo-600 text-sm font-medium"
+          >
+            + {t('projects.addValuation')}
+          </button>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+          {showValuationForm && (
+            <div className="p-4 border-b border-gray-100 space-y-3">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={valuationInput}
+                onChange={(e) => setValuationInput(e.target.value)}
+                placeholder="0"
+                autoFocus
+                className="w-full px-4 py-3 bg-gray-100 rounded-xl text-lg font-medium text-gray-900 placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <div className="text-xs text-gray-400">{t('projects.valuationHint')}</div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowValuationForm(false)}
+                  className="flex-1 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-medium"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={async () => {
+                    const v = Number(valuationInput);
+                    if (v > 0) await addValuation(v);
+                    setShowValuationForm(false);
+                  }}
+                  disabled={!(Number(valuationInput) > 0)}
+                  className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-40"
+                >
+                  {t('common.save')}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {valuations.length === 0 && !showValuationForm ? (
+            <div className="px-4 py-5 text-center text-sm text-gray-400">
+              {t('projects.noValuations')}
+            </div>
+          ) : (
+            [...valuations].reverse().map((v, i, arr) => {
+              const prev = arr[i + 1];
+              const delta = prev ? v.value - prev.value : null;
+              return (
+                <div key={v.id} className="flex items-center px-4 py-3 border-b border-gray-100 last:border-b-0">
+                  <div className="flex-1">
+                    <div className="font-medium text-gray-900">
+                      {formatMoney(v.value, project.currency)}
+                    </div>
+                    <div className="text-xs text-gray-400">{formatDate(v.date, getDateLocale(locale))}</div>
+                  </div>
+                  {delta !== null && delta !== 0 && (
+                    <span className={`text-sm font-medium ${delta > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      {delta > 0 ? '+' : ''}{formatMoney(delta, project.currency)}
+                    </span>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
@@ -202,6 +293,11 @@ export default function ProjectDetailContent({ projectId }: { projectId: number 
           project={project}
           onSave={async (data) => {
             await updateProject(projectId, data);
+            // Оценка живёт в истории; currentMarketValue оставляем как зеркало
+            // последнего значения — чтобы старые бэкапы читались корректно
+            if (data.currentMarketValue > 0) {
+              await addValuation(data.currentMarketValue);
+            }
             setShowEditForm(false);
           }}
           onCancel={() => setShowEditForm(false)}

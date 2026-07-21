@@ -5,6 +5,7 @@ import type {
   CurrencyRate,
   InvestmentProject,
   ProjectTransaction,
+  ProjectValuation,
   Dream,
   Settings,
   Profile,
@@ -16,6 +17,7 @@ class MyDreamsDB extends Dexie {
   currencyRates!: Table<CurrencyRate, number>;
   projects!: Table<InvestmentProject, number>;
   projectTransactions!: Table<ProjectTransaction, number>;
+  projectValuations!: Table<ProjectValuation, number>;
   dreams!: Table<Dream, number>;
   settings!: Table<Settings, number>;
   profiles!: Table<Profile, number>;
@@ -58,6 +60,57 @@ class MyDreamsDB extends Dexie {
       await tx.table('dreams').toCollection().modify({ profileId });
       await tx.table('settings').toCollection().modify({ profileId });
       await tx.table('projects').toCollection().modify({ profileId });
+    });
+
+    // V3: история оценок проектов. Раньше оценка была одним перезаписываемым
+    // полем — предыдущие значения терялись, и проект не попадал в график капитала.
+    this.version(3).stores({
+      profiles: '++id, name, isDemo',
+      accounts: '++id, profileId, name, type, currency, isArchived, sortOrder',
+      snapshots: '++id, accountId, date',
+      currencyRates: '++id, [from+to], date',
+      projects: '++id, profileId, name, stage',
+      projectTransactions: '++id, projectId, type, date',
+      projectValuations: '++id, projectId, date',
+      dreams: '++id, profileId',
+      settings: '++id, profileId',
+    }).upgrade(async (tx) => {
+      // Переносим текущую оценку в первую запись истории, чтобы ничего не потерять
+      const projects = await tx.table('projects').toArray();
+      const rows = projects
+        .filter((p: InvestmentProject) => typeof p.currentMarketValue === 'number' && p.currentMarketValue > 0)
+        .map((p: InvestmentProject) => ({
+          projectId: p.id!,
+          date: p.createdAt ?? new Date(),
+          value: p.currentMarketValue,
+        }));
+      if (rows.length > 0) {
+        await tx.table('projectValuations').bulkAdd(rows);
+      }
+
+      // Схлопываем дубли снапшотов: до этой версии каждое нажатие «Сохранить»
+      // добавляло новую запись, и за один вечер ввода данных накапливались
+      // десятки копий с одной датой. Оставляем по одной на счёт и день.
+      const snaps: BalanceSnapshot[] = await tx.table('snapshots').toArray();
+      const keep = new Map<string, { id: number; ts: number }>();
+      const drop: number[] = [];
+      for (const s of snaps) {
+        if (s.id == null) continue;
+        const key = `${s.accountId}|${new Date(s.date).toISOString().slice(0, 10)}`;
+        const ts = new Date(s.date).getTime();
+        const prev = keep.get(key);
+        if (!prev) {
+          keep.set(key, { id: s.id, ts });
+        } else if (ts >= prev.ts && s.id > prev.id) {
+          drop.push(prev.id);
+          keep.set(key, { id: s.id, ts });
+        } else {
+          drop.push(s.id);
+        }
+      }
+      if (drop.length > 0) {
+        await tx.table('snapshots').bulkDelete(drop);
+      }
     });
   }
 }
@@ -122,6 +175,28 @@ export async function getAccountSnapshots(accountId: number): Promise<BalanceSna
 
 export async function getAllSnapshots(): Promise<BalanceSnapshot[]> {
   return db.snapshots.toArray();
+}
+
+export async function getProjectValuations(projectId: number): Promise<ProjectValuation[]> {
+  return db.projectValuations.where('projectId').equals(projectId).sortBy('date');
+}
+
+export async function getLatestValuation(projectId: number): Promise<ProjectValuation | undefined> {
+  const all = await getProjectValuations(projectId);
+  return all[all.length - 1];
+}
+
+/** Одна оценка на проект в день: повторный ввод за сегодня перезаписывает. */
+export async function setProjectValuation(projectId: number, value: number, date = new Date()): Promise<void> {
+  const day = date.toISOString().slice(0, 10);
+  const existing = (await getProjectValuations(projectId)).find(
+    (v) => new Date(v.date).toISOString().slice(0, 10) === day
+  );
+  if (existing?.id) {
+    await db.projectValuations.update(existing.id, { value, date });
+  } else {
+    await db.projectValuations.add({ projectId, value, date });
+  }
 }
 
 export async function seedDemoProfile(): Promise<number> {

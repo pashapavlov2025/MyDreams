@@ -206,6 +206,20 @@ const en: Record<TranslationKey, string> = {
   'archive.confirm': 'Archive',
   'archive.hasBalance': 'This account has a balance',
   'archive.hint': 'It will stop counting toward Net Worth. History is kept — you can restore it below.',
+
+  // Projects: stages and valuation
+  'projects.frozen': 'Paid into construction',
+  'projects.operatingProfit': 'Operating profit',
+  'projects.buildingNote': 'While under construction the project counts toward Net Worth at the amount paid in: the asset is not yours yet, this is frozen cash. Market value starts counting once it moves to operating.',
+  'projects.valuation': 'Valuation',
+  'projects.valuationHistory': 'Valuation history',
+  'projects.addValuation': 'Add valuation',
+  'projects.noValuations': 'No valuations yet',
+  'projects.valuationHint': 'Updating once a quarter is enough',
+  'projects.totalPnl': 'Total P&L',
+  'charts.totalAssets': 'Assets',
+  'update.accountActions': 'Account actions',
+  'update.deleteWarning': 'The account and its full balance history will be permanently deleted.',
 };
 
 export default en;

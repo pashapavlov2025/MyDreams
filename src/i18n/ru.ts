@@ -204,6 +204,20 @@ const ru = {
   'archive.confirm': 'В архив',
   'archive.hasBalance': 'На счёте есть остаток',
   'archive.hint': 'Он перестанет учитываться в капитале. История сохранится, вернуть можно ниже.',
+
+  // Projects: stages and valuation
+  'projects.frozen': 'Вложено на стройку',
+  'projects.operatingProfit': 'Операционная прибыль',
+  'projects.buildingNote': 'На стадии стройки проект учитывается в капитале по выплаченной сумме: актив ещё не ваш, это замороженные деньги. Рыночная оценка начнёт учитываться после перехода в эксплуатацию.',
+  'projects.valuation': 'Оценка',
+  'projects.valuationHistory': 'История оценок',
+  'projects.addValuation': 'Внести оценку',
+  'projects.noValuations': 'Оценок пока нет',
+  'projects.valuationHint': 'Обновляйте раз в квартал — этого достаточно',
+  'projects.totalPnl': 'Полный P&L',
+  'charts.totalAssets': 'Активы',
+  'update.accountActions': 'Действия со счётом',
+  'update.deleteWarning': 'Счёт и вся его история балансов будут удалены безвозвратно.',
 } as const;
 
 export type TranslationKey = keyof typeof ru;

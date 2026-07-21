@@ -1,15 +1,25 @@
 'use client';
 
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/database';
-import type { InvestmentProject, ProjectTransaction, TransactionType } from '@/db/models';
+import { db, getLatestValuation, setProjectValuation, getProjectValuations } from '@/db/database';
+import type { InvestmentProject, ProjectTransaction, ProjectValuation } from '@/db/models';
 import { useCallback } from 'react';
 import { useProfile } from './useProfile';
 
 export interface ProjectWithPnL extends InvestmentProject {
+  /** Транши + расходы на стройку — капитал, заведённый в проект. */
   totalInvested: number;
-  totalIncome: number;
-  totalExpenses: number;
+  operatingIncome: number;
+  operatingExpenses: number;
+  operatingProfit: number;
+  /** Последняя оценка из истории. */
+  marketValue: number;
+  /**
+   * Вклад проекта в капитал на первом экране.
+   * Стройка — по выплаченному: актив ещё не твой, есть только замороженные деньги.
+   * Эксплуатация — по рыночной оценке: это уже настоящий актив.
+   */
+  currentValue: number;
   pnl: number;
   roi: number;
 }
@@ -40,6 +50,7 @@ export function useProjects() {
 
   const deleteProject = useCallback(async (id: number) => {
     await db.projectTransactions.where('projectId').equals(id).delete();
+    await db.projectValuations.where('projectId').equals(id).delete();
     await db.projects.delete(id);
   }, []);
 
@@ -59,11 +70,12 @@ export function useProjectsWithPnL() {
         .equals(project.id!)
         .toArray();
 
-      const totals = calcTotals(txs);
+      const latest = await getLatestValuation(project.id!);
+      const marketValue = latest?.value ?? project.currentMarketValue ?? 0;
 
       result.push({
         ...project,
-        ...totals,
+        ...calcTotals(txs, project.stage, marketValue),
       });
     }
     return result;
@@ -97,30 +109,63 @@ export function useProjectTransactions(projectId: number) {
   return { transactions: transactions ?? [], addTransaction, deleteTransaction };
 }
 
-function calcTotals(txs: ProjectTransaction[]) {
+export function useProjectValuations(projectId: number) {
+  const valuations = useLiveQuery(
+    () => getProjectValuations(projectId),
+    [projectId],
+    []
+  );
+
+  const addValuation = useCallback(
+    async (value: number, date?: Date) => setProjectValuation(projectId, value, date),
+    [projectId]
+  );
+
+  const deleteValuation = useCallback(
+    async (id: number) => db.projectValuations.delete(id),
+    []
+  );
+
+  return { valuations: valuations ?? [], addValuation, deleteValuation };
+}
+
+function calcTotals(txs: ProjectTransaction[], stage: InvestmentProject['stage'], marketValue: number) {
   let totalInvested = 0;
-  let totalIncome = 0;
-  let totalExpenses = 0;
+  let operatingIncome = 0;
+  let operatingExpenses = 0;
 
   for (const tx of txs) {
     switch (tx.type) {
       case 'tranche':
+      case 'construction_expense':
         totalInvested += tx.amount;
         break;
-      case 'construction_expense':
       case 'operating_expense':
-        totalExpenses += tx.amount;
+        operatingExpenses += tx.amount;
         break;
       case 'rental_income':
       case 'sale':
-        totalIncome += tx.amount;
+        operatingIncome += tx.amount;
         break;
     }
   }
 
-  const totalSpent = totalInvested + totalExpenses;
-  const pnl = totalIncome - totalSpent;
-  const roi = totalSpent > 0 ? (pnl / totalSpent) * 100 : 0;
+  const operatingProfit = operatingIncome - operatingExpenses;
+  const currentValue = stage === 'building' ? totalInvested : marketValue;
 
-  return { totalInvested, totalIncome, totalExpenses, pnl, roi };
+  // Прирост стоимости плюс операционный результат. На стройке прирост равен
+  // нулю по определению — деньги просто переложены из банка в объект.
+  const pnl = (currentValue - totalInvested) + operatingProfit;
+  const roi = totalInvested > 0 ? (pnl / totalInvested) * 100 : 0;
+
+  return {
+    totalInvested,
+    operatingIncome,
+    operatingExpenses,
+    operatingProfit,
+    marketValue,
+    currentValue,
+    pnl,
+    roi,
+  };
 }

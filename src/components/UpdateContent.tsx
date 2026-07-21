@@ -24,6 +24,7 @@ export default function UpdateContent() {
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
   const [confirmArchive, setConfirmArchive] = useState<number | null>(null);
+  const [menuOpen, setMenuOpen] = useState<number | null>(null);
 
   const archivedAccounts = useArchivedAccounts();
 
@@ -111,16 +112,18 @@ export default function UpdateContent() {
         </div>
       ) : (
         <>
-          {/* Balance update section */}
+          {/* Accounts: balance input + actions behind a menu */}
           <div className="px-4 pt-4 mb-2">
             <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
-              {t('update.updateBalances')}
+              {t('update.updateBalances')} ({accountsWithBalances.length})
             </div>
           </div>
 
           <div className="px-4 space-y-3">
             {accountsWithBalances.map((acc) => {
               const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '📦';
+              const original = allAccounts.find((a) => a.id === acc.id);
+              const isMenuOpen = menuOpen === acc.id;
               return (
                 <div key={acc.id} className="bg-white rounded-xl p-4 shadow-sm">
                   <div className="flex items-center mb-2">
@@ -129,34 +132,122 @@ export default function UpdateContent() {
                         <img src={icon} alt="" className="w-6 h-6 rounded-md object-cover" />
                       ) : icon}
                     </span>
-                    <span className="font-medium text-gray-900 truncate">{acc.name}</span>
-                    <span className="ml-auto text-xs text-gray-400 mr-1">{acc.currency}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-gray-900 truncate">{acc.name}</div>
+                      {acc.bankGroup && (
+                        <div className="text-xs text-gray-400 truncate">{acc.bankGroup}</div>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400 mr-1">{acc.currency}</span>
+                    {/* Редактирование, архив и удаление спрятаны за меню:
+                        со списком в десяток счетов их слишком легко задеть */}
                     <button
                       onClick={() => {
-                        const original = allAccounts.find((a) => a.id === acc.id);
-                        if (original) setEditingAccount(original);
+                        setMenuOpen(isMenuOpen ? null : acc.id ?? null);
+                        setConfirmDelete(null);
+                        setConfirmArchive(null);
                       }}
-                      className="px-1.5 py-0.5 text-gray-300 hover:text-indigo-600 transition-colors"
-                      aria-label={t('accountForm.edit')}
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-lg transition-colors ${
+                        isMenuOpen ? 'bg-gray-200 text-gray-700' : 'text-gray-300'
+                      }`}
+                      aria-label={t('update.accountActions')}
+                      aria-expanded={isMenuOpen}
                     >
-                      ✏️
+                      ⋯
                     </button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={balances[acc.id!] ?? ''}
-                      onChange={(e) =>
-                        setBalances((prev) => ({ ...prev, [acc.id!]: e.target.value }))
-                      }
-                      placeholder="0"
-                      className="flex-1 px-3 py-2.5 bg-gray-100 rounded-xl text-gray-900 text-lg font-medium placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
-                  {acc.latestBalance > 0 && (
+
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={balances[acc.id!] ?? ''}
+                    onChange={(e) =>
+                      setBalances((prev) => ({ ...prev, [acc.id!]: e.target.value }))
+                    }
+                    placeholder="0"
+                    className="w-full px-3 py-2.5 bg-gray-100 rounded-xl text-gray-900 text-lg font-medium placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                  {acc.latestBalance !== 0 && (
                     <div className="text-xs text-gray-400 mt-1">
                       {t('update.was')}: {formatMoney(acc.latestBalance, acc.currency)}
+                    </div>
+                  )}
+
+                  {isMenuOpen && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      {confirmArchive === acc.id ? (
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
+                          <div className="text-sm text-amber-900">
+                            {t('archive.hasBalance')}: {formatMoney(acc.latestBalance, acc.currency)}
+                          </div>
+                          <div className="text-xs text-amber-700 mt-0.5">{t('archive.hint')}</div>
+                          <div className="flex gap-2 mt-2.5">
+                            <button
+                              onClick={() => {
+                                if (acc.id) archiveAccount(acc.id);
+                                setConfirmArchive(null);
+                                setMenuOpen(null);
+                              }}
+                              className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium"
+                            >
+                              {t('archive.confirm')}
+                            </button>
+                            <button
+                              onClick={() => setConfirmArchive(null)}
+                              className="px-3 py-1.5 text-amber-700 text-xs font-medium"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                          </div>
+                        </div>
+                      ) : confirmDelete === acc.id ? (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                          <div className="text-sm text-red-900">{t('update.deleteWarning')}</div>
+                          <div className="flex gap-2 mt-2.5">
+                            <button
+                              onClick={() => {
+                                if (acc.id) deleteAccount(acc.id);
+                                setConfirmDelete(null);
+                                setMenuOpen(null);
+                              }}
+                              className="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs font-medium"
+                            >
+                              {t('common.delete')}
+                            </button>
+                            <button
+                              onClick={() => setConfirmDelete(null)}
+                              className="px-3 py-1.5 text-red-600 text-xs font-medium"
+                            >
+                              {t('common.cancel')}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { if (original) setEditingAccount(original); }}
+                            className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium"
+                          >
+                            ✏️ {t('accountForm.edit')}
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!acc.id) return;
+                              if (acc.latestBalance !== 0) setConfirmArchive(acc.id);
+                              else { archiveAccount(acc.id); setMenuOpen(null); }
+                            }}
+                            className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium"
+                          >
+                            📥 {t('settings.archive')}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(acc.id ?? null)}
+                            className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg text-xs font-medium"
+                          >
+                            🗑 {t('common.delete')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -172,114 +263,6 @@ export default function UpdateContent() {
             >
               {saving ? t('common.saving') : t('common.save')}
             </button>
-          </div>
-
-          {/* Account management section */}
-          <div className="px-4 mb-4">
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">
-              {t('settings.accounts')} ({accountsWithBalances.length})
-            </div>
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {accountsWithBalances.map((acc) => {
-                const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '📦';
-                const original = allAccounts.find((a) => a.id === acc.id);
-                return (
-                  <div key={acc.id} className="border-b border-gray-100 last:border-b-0">
-                    <div className="flex items-center px-4 py-3">
-                    <button
-                      onClick={() => { if (original) setEditingAccount(original); }}
-                      className="flex items-center flex-1 min-w-0 text-left"
-                    >
-                      <span className="text-xl mr-3 flex-shrink-0">
-                        {icon.startsWith('data:') ? (
-                          <img src={icon} alt="" className="w-6 h-6 rounded-md object-cover" />
-                        ) : icon}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-medium text-gray-900 truncate">{acc.name}</div>
-                        <div className="text-xs text-gray-400">
-                          {acc.bankGroup ? `${acc.bankGroup} · ` : ''}{acc.currency}
-                        </div>
-                      </div>
-                      <span className="text-gray-300 ml-2">›</span>
-                    </button>
-                    {confirmDelete === acc.id ? (
-                      <div className="flex gap-1 ml-2">
-                        <button
-                          onClick={() => {
-                            if (acc.id) deleteAccount(acc.id);
-                            setConfirmDelete(null);
-                          }}
-                          className="px-3 py-1 bg-red-500 text-white text-xs rounded-lg font-medium"
-                        >
-                          {t('common.delete')}
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(null)}
-                          className="px-3 py-1 bg-gray-200 text-gray-600 text-xs rounded-lg font-medium"
-                        >
-                          {t('common.no')}
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-1 ml-2">
-                        <button
-                          onClick={() => {
-                            if (!acc.id) return;
-                            // со счёта с остатком в архив — только с подтверждением:
-                            // он пропадёт из Net Worth, а вернуть было неочевидно
-                            if (acc.latestBalance !== 0) setConfirmArchive(acc.id);
-                            else archiveAccount(acc.id);
-                          }}
-                          className="px-2 py-1 text-xs text-gray-400"
-                          aria-label={t('settings.archive')}
-                        >
-                          📥
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete(acc.id ?? null)}
-                          className="px-2 py-1 text-xs text-gray-400"
-                          aria-label={t('common.delete')}
-                        >
-                          🗑
-                        </button>
-                      </div>
-                    )}
-                    </div>
-
-                    {confirmArchive === acc.id && (
-                      <div className="px-4 pb-3 -mt-1">
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                          <div className="text-sm text-amber-900">
-                            {t('archive.hasBalance')}: {formatMoney(acc.latestBalance, acc.currency)}
-                          </div>
-                          <div className="text-xs text-amber-700 mt-0.5">
-                            {t('archive.hint')}
-                          </div>
-                          <div className="flex gap-2 mt-2.5">
-                            <button
-                              onClick={() => {
-                                if (acc.id) archiveAccount(acc.id);
-                                setConfirmArchive(null);
-                              }}
-                              className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-xs font-medium"
-                            >
-                              {t('archive.confirm')}
-                            </button>
-                            <button
-                              onClick={() => setConfirmArchive(null)}
-                              className="px-3 py-1.5 text-amber-700 text-xs font-medium"
-                            >
-                              {t('common.cancel')}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
           </div>
 
           {/* Archived accounts */}

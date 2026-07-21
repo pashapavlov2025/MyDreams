@@ -6,12 +6,13 @@ import type {
   BalanceSnapshot,
   InvestmentProject,
   ProjectTransaction,
+  ProjectValuation,
   Dream,
   Settings,
 } from '@/db/models';
 
 export const BACKUP_FORMAT = 'mydreams-backup';
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 export interface BackupData {
   profiles: Profile[];
@@ -19,6 +20,7 @@ export interface BackupData {
   snapshots: BalanceSnapshot[];
   projects: InvestmentProject[];
   projectTransactions: ProjectTransaction[];
+  projectValuations: ProjectValuation[];
   dreams: Dream[];
   settings: Settings[];
 }
@@ -43,13 +45,14 @@ export type RestoreMode = 'replace' | 'merge';
 // currencyRates не бэкапим — это кеш, он подтягивается из API заново
 
 export async function createBackup(): Promise<Backup> {
-  const [profiles, accounts, snapshots, projects, projectTransactions, dreams, settings] =
+  const [profiles, accounts, snapshots, projects, projectTransactions, projectValuations, dreams, settings] =
     await Promise.all([
       db.profiles.toArray(),
       db.accounts.toArray(),
       db.snapshots.toArray(),
       db.projects.toArray(),
       db.projectTransactions.toArray(),
+      db.projectValuations.toArray(),
       db.dreams.toArray(),
       db.settings.toArray(),
     ]);
@@ -58,7 +61,7 @@ export async function createBackup(): Promise<Backup> {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
-    data: { profiles, accounts, snapshots, projects, projectTransactions, dreams, settings },
+    data: { profiles, accounts, snapshots, projects, projectTransactions, projectValuations, dreams, settings },
   };
 }
 
@@ -172,6 +175,9 @@ export function parseBackup(text: string): Backup {
   const projectTransactions = (
     requireArray(d.projectTransactions, 'projectTransactions') as ProjectTransaction[]
   ).map((tx) => ({ ...tx, date: toDate(tx.date) }));
+  // v1-бэкапы про оценки не знали — для них это просто пустой список
+  const projectValuations = (Array.isArray(d.projectValuations) ? d.projectValuations : [] as unknown[])
+    .map((v) => ({ ...(v as ProjectValuation), date: toDate((v as ProjectValuation).date) }));
   const dreams = requireArray(d.dreams, 'dreams') as Dream[];
   const settings = (requireArray(d.settings, 'settings') as Settings[]).map((s) => ({
     ...s,
@@ -197,7 +203,7 @@ export function parseBackup(text: string): Backup {
     format: obj.format,
     version: obj.version,
     exportedAt: typeof obj.exportedAt === 'string' ? obj.exportedAt : new Date().toISOString(),
-    data: { profiles, accounts, snapshots, projects, projectTransactions, dreams, settings },
+    data: { profiles, accounts, snapshots, projects, projectTransactions, projectValuations, dreams, settings },
   };
 }
 
@@ -209,18 +215,19 @@ export function parseBackup(text: string): Backup {
  * Возвращает id профиля, на который стоит переключиться после восстановления.
  */
 export async function restoreBackup(backup: Backup, mode: RestoreMode): Promise<number | null> {
-  const { profiles, accounts, snapshots, projects, projectTransactions, dreams, settings } =
+  const { profiles, accounts, snapshots, projects, projectTransactions, projectValuations, dreams, settings } =
     backup.data;
 
   return db.transaction(
     'rw',
-    [db.profiles, db.accounts, db.snapshots, db.projects, db.projectTransactions, db.dreams, db.settings],
+    [db.profiles, db.accounts, db.snapshots, db.projects, db.projectTransactions, db.projectValuations, db.dreams, db.settings],
     async () => {
       if (mode === 'replace') {
         await Promise.all([
           db.snapshots.clear(),
           db.accounts.clear(),
           db.projectTransactions.clear(),
+          db.projectValuations.clear(),
           db.projects.clear(),
           db.dreams.clear(),
           db.settings.clear(),
@@ -275,6 +282,13 @@ export async function restoreBackup(backup: Backup, mode: RestoreMode): Promise<
       await db.projectTransactions.bulkAdd(
         projectTransactions
           .filter((tx) => projectIdMap.has(tx.projectId))
+          .map(({ id, ...rest }) => ({ ...rest, projectId: projectIdMap.get(rest.projectId)! }))
+      );
+
+      // Project valuations
+      await db.projectValuations.bulkAdd(
+        projectValuations
+          .filter((v) => projectIdMap.has(v.projectId))
           .map(({ id, ...rest }) => ({ ...rest, projectId: projectIdMap.get(rest.projectId)! }))
       );
 

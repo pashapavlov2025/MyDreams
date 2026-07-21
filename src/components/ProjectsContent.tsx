@@ -19,7 +19,7 @@ export default function ProjectsContent() {
   const [showForm, setShowForm] = useState(false);
 
   const totalValue = projects.reduce((sum, p) => {
-    return sum + convertToBase(p.currentMarketValue, p.currency, baseCurrency);
+    return sum + convertToBase(p.currentValue, p.currency, baseCurrency);
   }, 0);
 
   return (
@@ -48,7 +48,7 @@ export default function ProjectsContent() {
       {projects.length > 0 ? (
         <div className="px-4 space-y-3 pb-24">
           {projects.map((project) => {
-            const valueInBase = convertToBase(project.currentMarketValue, project.currency, baseCurrency);
+            const valueInBase = convertToBase(project.currentValue, project.currency, baseCurrency);
             return (
               <button
                 key={project.id}

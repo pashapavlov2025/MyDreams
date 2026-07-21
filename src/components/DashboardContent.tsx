@@ -55,7 +55,7 @@ export default function DashboardContent() {
 
   const projectsValue = useMemo(() => {
     return projectsWithPnL.reduce((sum, p) => {
-      return sum + convertToBase(p.currentMarketValue, p.currency, baseCurrency);
+      return sum + convertToBase(p.currentValue, p.currency, baseCurrency);
     }, 0);
   }, [projectsWithPnL, baseCurrency]);
 
@@ -176,7 +176,7 @@ export default function DashboardContent() {
       <BackupReminder hasData={accounts.length > 0 || projectsWithPnL.length > 0} />
 
       <NetWorthChart baseCurrency={baseCurrency} />
-      <AssetBreakdown accounts={accounts} baseCurrency={baseCurrency} />
+      <AssetBreakdown accounts={accounts} projects={projectsWithPnL} baseCurrency={baseCurrency} />
 
       {groups.length > 0 ? (
         groups.map(({ type, subGroups }) => (
@@ -229,7 +229,7 @@ export default function DashboardContent() {
           </div>
           <div className="bg-white rounded-xl mx-4 overflow-hidden shadow-sm">
             {projectsWithPnL.map((project) => {
-              const valueInBase = convertToBase(project.currentMarketValue, project.currency, baseCurrency);
+              const valueInBase = convertToBase(project.currentValue, project.currency, baseCurrency);
               return (
                 <button
                   key={project.id}

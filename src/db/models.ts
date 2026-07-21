@@ -49,6 +49,17 @@ export interface InvestmentProject {
   createdAt: Date;
 }
 
+/**
+ * Оценка проекта на дату. Ровно та же идея, что и BalanceSnapshot у счетов,
+ * только обновляется редко — раз в квартал, а не раз в месяц.
+ */
+export interface ProjectValuation {
+  id?: number;
+  projectId: number;
+  date: Date;
+  value: number;
+}
+
 export type TransactionType = 'tranche' | 'construction_expense' | 'rental_income' | 'operating_expense' | 'sale';
 
 export interface ProjectTransaction {
