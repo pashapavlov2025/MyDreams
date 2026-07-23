@@ -61,6 +61,13 @@ function metadataRow(label: string, value: string | undefined): string {
   `;
 }
 
+function renderIcon(icon: string): string {
+  if (icon.startsWith('data:')) {
+    return `<img src="${escapeHtml(icon)}" alt="" class="account-icon-img" />`;
+  }
+  return `<span class="account-icon">${escapeHtml(icon)}</span>`;
+}
+
 function accountCard(account: FamilyAccessAccount, ctx: FamilyExportContext): string {
   const { t, locale } = ctx;
   const meta = account.metadata ?? {};
@@ -78,7 +85,7 @@ function accountCard(account: FamilyAccessAccount, ctx: FamilyExportContext): st
     <div class="account-card">
       <div class="account-header">
         <div class="account-title">
-          <span class="account-icon">${icon.startsWith('data:') ? '📷' : icon}</span>
+          ${renderIcon(icon)}
           <div>
             <div class="account-name">${escapeHtml(account.name)}</div>
             ${account.bankGroup ? `<div class="account-bank">${escapeHtml(account.bankGroup)}</div>` : ''}
@@ -188,6 +195,13 @@ export function generateFamilyAccessHtml(ctx: FamilyExportContext): string {
     .account-icon {
       font-size: 24px;
       line-height: 1;
+    }
+    .account-icon-img {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      object-fit: cover;
+      flex-shrink: 0;
     }
     .account-name {
       font-weight: 600;
