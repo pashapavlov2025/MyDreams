@@ -10,6 +10,7 @@ import { useTranslation, getDateLocale, type Locale } from '@/i18n';
 import { useProfile } from '@/hooks/useProfile';
 import BackupSection from '@/components/BackupSection';
 import PushSection from '@/components/PushSection';
+import FamilyAccessSection from '@/components/FamilyAccessSection';
 
 export default function SettingsContent() {
   const { dream, updateDream } = useDream();
@@ -281,6 +282,9 @@ export default function SettingsContent() {
 
         {/* Push reminders */}
         <PushSection />
+
+        {/* Family access export */}
+        <FamilyAccessSection />
 
         {/* Backup / restore */}
         <BackupSection />
