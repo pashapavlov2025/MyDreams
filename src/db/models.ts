@@ -8,6 +8,23 @@ export interface Profile {
   createdAt: Date;
 }
 
+/**
+ * Реквизиты и указатели для близких — "что если со мной что-то случится".
+ * Здесь НЕТ паролей, seed-фраз и полных номеров карт (см. PLAN.md, фаза 6).
+ */
+export interface AccountMetadata {
+  contractNumber?: string;
+  managerName?: string;
+  managerPhone?: string;
+  managerEmail?: string;
+  organizationAddress?: string;
+  accessMethod?: string;
+  country?: string;
+  documentsLocation?: string;
+  beneficiary?: string;
+  notes?: string;
+}
+
 export interface Account {
   id?: number;
   profileId: number;
@@ -19,6 +36,7 @@ export interface Account {
   sortOrder: number;
   isArchived: boolean;
   createdAt: Date;
+  metadata?: AccountMetadata;
 }
 
 export interface BalanceSnapshot {

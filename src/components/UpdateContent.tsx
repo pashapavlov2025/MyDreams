@@ -68,6 +68,7 @@ export default function UpdateContent() {
           currency: editingAccount.currency,
           icon: editingAccount.icon,
           bankGroup: editingAccount.bankGroup,
+          metadata: editingAccount.metadata,
         } : undefined}
         existingGroups={existingGroups}
         onSave={async (data) => {
