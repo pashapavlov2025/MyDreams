@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { InvestmentProject, ProjectStage } from '@/db/models';
+import type { InvestmentProject, ProjectStage, FamilyAccessMetadata } from '@/db/models';
 import { getAvailableCurrencies } from '@/lib/currency';
 import { useTranslation, type TranslationKey } from '@/i18n';
 
@@ -19,6 +19,7 @@ interface ProjectFormProps {
     stage: ProjectStage;
     operatingSince: Date | null;
     currency: string;
+    metadata?: FamilyAccessMetadata;
   }) => void;
   onCancel: () => void;
 }
@@ -29,11 +30,19 @@ export default function ProjectForm({ project, onSave, onCancel }: ProjectFormPr
   const [description, setDescription] = useState(project?.description ?? '');
   const [stage, setStage] = useState<ProjectStage>(project?.stage ?? 'building');
   const [currency, setCurrency] = useState(project?.currency ?? 'USD');
+  const [metadata, setMetadata] = useState<FamilyAccessMetadata>(project?.metadata ?? {});
+  const [showMetadata, setShowMetadata] = useState(Object.keys(project?.metadata ?? {}).length > 0);
 
   const currencies = getAvailableCurrencies();
 
   const handleSubmit = () => {
     if (!name.trim()) return;
+    const trimmed: FamilyAccessMetadata = {};
+    for (const [key, value] of Object.entries(metadata)) {
+      if (typeof value === 'string' && value.trim()) {
+        (trimmed as Record<string, string>)[key] = value.trim();
+      }
+    }
     onSave({
       name: name.trim(),
       description: description.trim(),
@@ -43,6 +52,7 @@ export default function ProjectForm({ project, onSave, onCancel }: ProjectFormPr
       operatingSince:
         stage === 'operating' ? (project?.operatingSince ?? new Date()) : null,
       currency,
+      metadata: Object.keys(trimmed).length > 0 ? trimmed : undefined,
     });
   };
 
@@ -104,8 +114,60 @@ export default function ProjectForm({ project, onSave, onCancel }: ProjectFormPr
               </select>
             </div>
           </div>
+
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setShowMetadata((s) => !s)}
+              className="flex items-center justify-between w-full py-2 text-left"
+            >
+              <span className="text-sm font-semibold text-gray-700">{t('accountForm.metadataTitle')}</span>
+              <span className="text-gray-400 text-lg">{showMetadata ? '−' : '+'}</span>
+            </button>
+            <p className="text-xs text-gray-400 mb-3">{t('accountForm.metadataHint')}</p>
+
+            {showMetadata && (
+              <div className="space-y-3">
+                <MetadataField label={t('accountForm.contractNumber')} placeholder={t('accountForm.contractNumberPlaceholder')} value={metadata.contractNumber ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, contractNumber: v }))} />
+                <MetadataField label={t('accountForm.managerName')} placeholder={t('accountForm.managerNamePlaceholder')} value={metadata.managerName ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, managerName: v }))} />
+                <MetadataField label={t('accountForm.managerPhone')} placeholder={t('accountForm.managerPhonePlaceholder')} value={metadata.managerPhone ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, managerPhone: v }))} inputMode="tel" />
+                <MetadataField label={t('accountForm.managerEmail')} placeholder={t('accountForm.managerEmailPlaceholder')} value={metadata.managerEmail ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, managerEmail: v }))} inputMode="email" />
+                <MetadataField label={t('accountForm.organizationAddress')} placeholder={t('accountForm.organizationAddressPlaceholder')} value={metadata.organizationAddress ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, organizationAddress: v }))} />
+                <MetadataField label={t('accountForm.accessMethod')} placeholder={t('accountForm.accessMethodPlaceholder')} value={metadata.accessMethod ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, accessMethod: v }))} />
+                <MetadataField label={t('accountForm.country')} placeholder={t('accountForm.countryPlaceholder')} value={metadata.country ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, country: v }))} />
+                <MetadataField label={t('accountForm.documentsLocation')} placeholder={t('accountForm.documentsLocationPlaceholder')} value={metadata.documentsLocation ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, documentsLocation: v }))} />
+                <MetadataField label={t('accountForm.beneficiary')} placeholder={t('accountForm.beneficiaryPlaceholder')} value={metadata.beneficiary ?? ''} onChange={(v) => setMetadata((m) => ({ ...m, beneficiary: v }))} />
+                <div>
+                  <label className="text-xs text-gray-500 mb-1 block">{t('accountForm.notes')}</label>
+                  <textarea
+                    value={metadata.notes ?? ''}
+                    onChange={(e) => setMetadata((m) => ({ ...m, notes: e.target.value }))}
+                    placeholder={t('accountForm.notesPlaceholder')}
+                    rows={3}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MetadataField({ label, placeholder, value, onChange, inputMode }: { label: string; placeholder: string; value: string; onChange: (value: string) => void; inputMode?: 'tel' | 'email' }) {
+  return (
+    <div>
+      <label className="text-xs text-gray-500 mb-1 block">{label}</label>
+      <input
+        type={inputMode === 'email' ? 'email' : 'text'}
+        inputMode={inputMode}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
     </div>
   );
 }

@@ -11,8 +11,9 @@ export interface Profile {
 /**
  * Реквизиты и указатели для близких — "что если со мной что-то случится".
  * Здесь НЕТ паролей, seed-фраз и полных номеров карт (см. PLAN.md, фаза 6).
+ * Используется и у счетов, и у проектов.
  */
-export interface AccountMetadata {
+export interface FamilyAccessMetadata {
   contractNumber?: string;
   managerName?: string;
   managerPhone?: string;
@@ -25,6 +26,8 @@ export interface AccountMetadata {
   notes?: string;
 }
 
+export type AccountMetadata = FamilyAccessMetadata;
+
 export interface Account {
   id?: number;
   profileId: number;
@@ -36,7 +39,7 @@ export interface Account {
   sortOrder: number;
   isArchived: boolean;
   createdAt: Date;
-  metadata?: AccountMetadata;
+  metadata?: FamilyAccessMetadata;
 }
 
 export interface BalanceSnapshot {
@@ -72,6 +75,7 @@ export interface InvestmentProject {
   currency: string;
   currentMarketValue: number;
   createdAt: Date;
+  metadata?: FamilyAccessMetadata;
 }
 
 /**
