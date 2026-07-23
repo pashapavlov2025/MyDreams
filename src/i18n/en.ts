@@ -248,6 +248,10 @@ const en: Record<TranslationKey, string> = {
   'familyExport.beneficiary': 'Heir / beneficiary',
   'familyExport.notes': 'Notes',
   'familyExport.emptyHint': 'No details filled for this account.',
+  'familyExport.projectsTitle': 'Investment projects',
+  'familyExport.stageBuilding': 'Building',
+  'familyExport.stageOperating': 'Operating',
+  'familyExport.currency': 'Currency',
 
   // Archive
   'archive.restore': 'Restore',

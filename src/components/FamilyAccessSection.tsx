@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAccountsWithBalances } from '@/hooks/useAccounts';
+import { useProjects } from '@/hooks/useProjects';
 import { useSettings } from '@/hooks/useCurrency';
 import { useProfile } from '@/hooks/useProfile';
 import { useTranslation, getDateLocale } from '@/i18n';
@@ -11,6 +12,7 @@ import type { TranslationKey } from '@/i18n';
 
 export default function FamilyAccessSection() {
   const accounts = useAccountsWithBalances();
+  const { projects } = useProjects();
   const { settings } = useSettings();
   const { profileId, profiles } = useProfile();
   const { t, locale } = useTranslation();
@@ -20,15 +22,17 @@ export default function FamilyAccessSection() {
 
   const profile = profiles.find((p) => p.id === profileId);
   const accountsWithMetadata = accounts.filter((a) => a.metadata && Object.keys(a.metadata).length > 0);
+  const hasData = accounts.length > 0 || projects.length > 0;
 
   const handleExport = async () => {
-    if (!profile || accounts.length === 0) return;
+    if (!profile || !hasData) return;
     setExporting(true);
     setResult(null);
     try {
       const html = generateFamilyAccessHtml({
         profile,
         accounts,
+        projects,
         baseCurrency: settings?.baseCurrency ?? 'USD',
         locale: dateLocale,
         t: (key: FamilyExportKey) => t(key as TranslationKey),
@@ -60,7 +64,7 @@ export default function FamilyAccessSection() {
           )}
           <button
             onClick={handleExport}
-            disabled={exporting || accounts.length === 0}
+            disabled={exporting || !hasData}
             className="w-full py-2.5 bg-indigo-600 text-white rounded-xl font-medium disabled:opacity-50 active:bg-indigo-700 transition-colors"
           >
             {exporting ? t('familyExport.exporting') : t('familyExport.export')}

@@ -1,4 +1,4 @@
-import type { Account, AccountMetadata, Profile } from '@/db/models';
+import type { Account, AccountMetadata, Profile, InvestmentProject } from '@/db/models';
 import { formatMoney, formatDate } from '@/lib/format';
 import { ACCOUNT_TYPE_ICONS } from '@/db/models';
 import type { Locale } from '@/i18n';
@@ -11,6 +11,7 @@ export interface FamilyAccessAccount extends Account {
 export interface FamilyExportContext {
   profile: Profile;
   accounts: FamilyAccessAccount[];
+  projects: InvestmentProject[];
   baseCurrency: string;
   locale: string;
   t: (key: FamilyExportKey) => string;
@@ -40,7 +41,11 @@ export type FamilyExportKey =
   | 'familyExport.shared'
   | 'familyExport.downloaded'
   | 'familyExport.failed'
-  | 'familyExport.readyCount';
+  | 'familyExport.readyCount'
+  | 'familyExport.projectsTitle'
+  | 'familyExport.stageBuilding'
+  | 'familyExport.stageOperating'
+  | 'familyExport.currency';
 
 function escapeHtml(text: string): string {
   return text
@@ -112,13 +117,68 @@ function accountCard(account: FamilyAccessAccount, ctx: FamilyExportContext): st
   `;
 }
 
+function projectCard(project: InvestmentProject, ctx: FamilyExportContext): string {
+  const { t } = ctx;
+  const meta = project.metadata ?? {};
+  const stageLabel = project.stage === 'building'
+    ? t('familyExport.stageBuilding')
+    : t('familyExport.stageOperating');
+
+  const managerParts: string[] = [];
+  if (meta.managerName) managerParts.push(meta.managerName);
+  if (meta.managerPhone) managerParts.push(meta.managerPhone);
+  if (meta.managerEmail) managerParts.push(meta.managerEmail);
+
+  const managerValue = managerParts.length > 0
+    ? managerParts.join(' • ')
+    : '';
+
+  return `
+    <div class="account-card project-card">
+      <div class="account-header">
+        <div class="account-title">
+          <span class="account-icon">🏗</span>
+          <div>
+            <div class="account-name">${escapeHtml(project.name)}</div>
+            ${project.description ? `<div class="account-bank">${escapeHtml(project.description)}</div>` : ''}
+          </div>
+        </div>
+        <div class="project-meta">
+          <div class="project-stage">${escapeHtml(stageLabel)}</div>
+          <div class="account-date">${escapeHtml(t('familyExport.currency'))}: ${escapeHtml(project.currency)}</div>
+        </div>
+      </div>
+      ${Object.keys(meta).length === 0 ? `<div class="empty-hint">${escapeHtml(t('familyExport.emptyHint'))}</div>` : `
+        <div class="meta-grid">
+          ${metadataRow(t('familyExport.contractNumber'), meta.contractNumber)}
+          ${managerValue ? metadataRow(t('familyExport.manager'), managerValue) : ''}
+          ${metadataRow(t('familyExport.organizationAddress'), meta.organizationAddress)}
+          ${metadataRow(t('familyExport.accessMethod'), meta.accessMethod)}
+          ${metadataRow(t('familyExport.country'), meta.country)}
+          ${metadataRow(t('familyExport.documentsLocation'), meta.documentsLocation)}
+          ${metadataRow(t('familyExport.beneficiary'), meta.beneficiary)}
+          ${metadataRow(t('familyExport.notes'), meta.notes)}
+        </div>
+      `}
+    </div>
+  `;
+}
+
 export function generateFamilyAccessHtml(ctx: FamilyExportContext): string {
-  const { profile, accounts, baseCurrency, locale, t } = ctx;
+  const { profile, accounts, projects, locale, t } = ctx;
   const generatedAt = new Date();
 
   const accountsHtml = accounts.length > 0
     ? accounts.map((a) => accountCard(a, ctx)).join('')
     : `<p class="empty">${escapeHtml(t('familyExport.noRecords'))}</p>`;
+
+  const projectsHtml = projects.length > 0
+    ? projects.map((p) => projectCard(p, ctx)).join('')
+    : '';
+
+  const sectionTitle = (title: string) => `
+    <div class="section-title">${escapeHtml(title)}</div>
+  `;
 
   return `<!DOCTYPE html>
 <html lang="${locale}">
@@ -253,6 +313,23 @@ export function generateFamilyAccessHtml(ctx: FamilyExportContext): string {
       color: #9ca3af;
       padding: 40px 0;
     }
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+      margin: 32px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .project-meta {
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .project-stage {
+      font-weight: 600;
+      font-size: 14px;
+      color: #111827;
+    }
     @media print {
       body { background: #fff; }
       .account-card { box-shadow: none; border: 1px solid #e5e7eb; }
@@ -278,6 +355,7 @@ export function generateFamilyAccessHtml(ctx: FamilyExportContext): string {
       ${escapeHtml(t('familyExport.noPasswords'))}
     </div>
     ${accountsHtml}
+    ${projectsHtml ? `${sectionTitle(t('familyExport.projectsTitle'))}${projectsHtml}` : ''}
   </div>
 </body>
 </html>`;

@@ -246,6 +246,10 @@ const ru = {
   'familyExport.beneficiary': 'Наследник / бенефициар',
   'familyExport.notes': 'Комментарий',
   'familyExport.emptyHint': 'Реквизиты для этого счёта не заполнены.',
+  'familyExport.projectsTitle': 'Инвестиционные проекты',
+  'familyExport.stageBuilding': 'Строительство',
+  'familyExport.stageOperating': 'В работе',
+  'familyExport.currency': 'Валюта',
 
   // Archive
   'archive.restore': 'Вернуть',
