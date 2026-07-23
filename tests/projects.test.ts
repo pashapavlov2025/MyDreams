@@ -82,11 +82,12 @@ async function main() {
   console.log('✓ дедуп: 11 записей за день → 1, остаётся последняя');
 
   // --- повторное сохранение того же значения не плодит записей -------------
-  await saveBalances([{ accountId: accId, amount: 110 }]);
-  await saveBalances([{ accountId: accId, amount: 110 }]);
+  const testDate = new Date('2026-07-21T12:00:00Z');
+  await saveBalances([{ accountId: accId, amount: 110 }], testDate);
+  await saveBalances([{ accountId: accId, amount: 110 }], testDate);
   assert.strictEqual((await db.snapshots.where('accountId').equals(accId).toArray()).length, 1,
     'сохранение без изменения суммы не создаёт запись');
-  await saveBalances([{ accountId: accId, amount: 999 }]);
+  await saveBalances([{ accountId: accId, amount: 999 }], testDate);
   const afterChange = await db.snapshots.where('accountId').equals(accId).toArray();
   assert.strictEqual(afterChange.length, 1, 'та же дата — обновляем, а не добавляем');
   assert.strictEqual(afterChange[0].amount, 999);

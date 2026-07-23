@@ -12,8 +12,11 @@ function dayKey(d: Date | string): string {
  *
  * Записи, не меняющие сумму, не создаются вовсе.
  */
-export async function saveBalances(balances: { accountId: number; amount: number }[]): Promise<void> {
-  const now = new Date();
+export async function saveBalances(
+  balances: { accountId: number; amount: number }[],
+  date: Date = new Date()
+): Promise<void> {
+  const now = date;
   const today = dayKey(now);
 
   const valid = balances.filter(
