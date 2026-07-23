@@ -6,7 +6,6 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getAccountSnapshots } from '@/db/database';
 import { formatMoney, formatDate } from '@/lib/format';
 import { ACCOUNT_TYPE_ICONS } from '@/db/models';
-import type { Account, AccountMetadata } from '@/db/models';
 import { useTranslation, getDateLocale } from '@/i18n';
 import { useProfile } from '@/hooks/useProfile';
 import {
@@ -96,8 +95,6 @@ export default function AccountHistoryContent({ accountId }: Props) {
         )}
       </div>
 
-      <AccountMetadataSection account={account} />
-
       {chartData.length >= 2 && (
         <div className="px-4 mb-4">
           <div className="bg-white rounded-xl shadow-sm p-4">
@@ -173,46 +170,6 @@ export default function AccountHistoryContent({ accountId }: Props) {
             <p className="text-gray-400 text-sm">{t('accountHistory.noRecords')}</p>
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-function AccountMetadataSection({ account }: { account: Account }) {
-  const { t } = useTranslation();
-  const meta = account.metadata;
-  if (!meta) return null;
-
-  const fields: { key: keyof AccountMetadata; label: string }[] = [
-    { key: 'contractNumber', label: t('accountForm.contractNumber') },
-    { key: 'managerName', label: t('accountForm.managerName') },
-    { key: 'managerPhone', label: t('accountForm.managerPhone') },
-    { key: 'managerEmail', label: t('accountForm.managerEmail') },
-    { key: 'organizationAddress', label: t('accountForm.organizationAddress') },
-    { key: 'accessMethod', label: t('accountForm.accessMethod') },
-    { key: 'country', label: t('accountForm.country') },
-    { key: 'documentsLocation', label: t('accountForm.documentsLocation') },
-    { key: 'beneficiary', label: t('accountForm.beneficiary') },
-    { key: 'notes', label: t('accountForm.notes') },
-  ];
-
-  const rows = fields.filter((f) => typeof meta[f.key] === 'string' && (meta[f.key] as string).trim());
-  if (rows.length === 0) return null;
-
-  return (
-    <div className="px-4 mb-4">
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
-          {t('accountForm.metadataTitle')}
-        </div>
-        <div className="space-y-2">
-          {rows.map(({ key, label }) => (
-            <div key={key} className="text-sm">
-              <span className="text-gray-400">{label}: </span>
-              <span className="text-gray-900 whitespace-pre-wrap">{meta[key]}</span>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
